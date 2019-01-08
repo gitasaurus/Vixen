@@ -65,6 +65,7 @@ using Cursor = System.Windows.Forms.Cursor;
 using Cursors = System.Windows.Forms.Cursors;
 using KeyEventArgs = System.Windows.Forms.KeyEventArgs;
 using MouseEventArgs = System.Windows.Forms.MouseEventArgs;
+using PropertyDescriptor = System.ComponentModel.PropertyDescriptor;
 
 namespace VixenModules.Editor.TimedSequenceEditor
 {
@@ -552,6 +553,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 			_timeLineGlobalEventManager.MarksMoving += TimeLineGlobalMoving;
 			_timeLineGlobalEventManager.MarksMoved += TimeLineGlobalMoved;
 			_timeLineGlobalEventManager.DeleteMark += TimeLineGlobalDeleted;
+			_timeLineGlobalEventManager.MarksPasted += TimeLineGlobalEventManagerOnMarksPasted;
 			_timeLineGlobalEventManager.MarksTextChanged += TimeLineGlobalTextChanged;
 			_timeLineGlobalEventManager.PhonemeBreakdownAction += PhonemeBreakdownAction;
 			_timeLineGlobalEventManager.PlayRangeAction += TimeLineGlobalEventManagerOnPlayRangeAction;
@@ -769,6 +771,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 			TimelineControl.RulerTimeRangeDragged -= timelineControl_TimeRangeDragged;
 			_timeLineGlobalEventManager.MarksMoved -= TimeLineGlobalMoved;
 			_timeLineGlobalEventManager.DeleteMark -= TimeLineGlobalDeleted;
+			_timeLineGlobalEventManager.MarksPasted -= TimeLineGlobalEventManagerOnMarksPasted;
 			_timeLineGlobalEventManager.MarksMoving -= TimeLineGlobalMoving;
 			_timeLineGlobalEventManager.MarksTextChanged -= TimeLineGlobalTextChanged;
 			_timeLineGlobalEventManager.PhonemeBreakdownAction -= PhonemeBreakdownAction;
@@ -3088,6 +3091,21 @@ namespace VixenModules.Editor.TimedSequenceEditor
 			SequenceModified();
 		}
 
+		private void TimeLineGlobalEventManagerOnMarksPasted(object sender, MarksPastedEventArgs e)
+		{
+			var marksPasted = new Dictionary<IMark, IMarkCollection>();
+			foreach (var mark in e.Marks)
+			{
+				marksPasted.Add(mark, mark.Parent);
+			}
+			var act = new MarksAddedUndoAction(this, marksPasted);
+			_undoMgr.AddUndoAction(act);
+			CheckAndRenderDirtyElementsAsync();
+			UpdateGridSnapTimes();
+			SequenceModified();
+		}
+
+
 		private void timelineControl_RulerBeginDragTimeRange(object sender, EventArgs e)
 		{
 			_mPrevPlaybackStart = TimelineControl.PlaybackStartTime;
@@ -4328,6 +4346,15 @@ namespace VixenModules.Editor.TimedSequenceEditor
 			List<GradientLevelPair> gradientLevelPairs = property.Descriptor.GetValue(element.EffectNode.Effect) as List<GradientLevelPair>;
 			if (gradientLevelPairs == null) return;
 
+			if (gradientLevelPairs.Count == 1)
+			{
+				var newGradientLevelPairs = gradientLevelPairs.ToList();
+				newGradientLevelPairs[0] = new GradientLevelPair(gradientLevelPairs[0].ColorGradient, curve);
+				elementValues.Add(element, new Tuple<object, PropertyDescriptor>(property.Descriptor.GetValue(element.EffectNode.Effect), property.Descriptor));
+				UpdateEffectProperty(property.Descriptor, element, newGradientLevelPairs);
+				return;
+			}
+
 			var parameterPickerControls = CreateGradientLevelPairPickerControls(property, gradientLevelPairs, false);
 
 			var parameterPicker = CreateParameterPicker(parameterPickerControls);
@@ -4503,6 +4530,15 @@ namespace VixenModules.Editor.TimedSequenceEditor
 		{
 			List<GradientLevelPair> gradients = property.Descriptor.GetValue(element.EffectNode.Effect) as List<GradientLevelPair>;
 			if (gradients == null) return;
+
+			if (gradients.Count == 1)
+			{
+				var newGradients = gradients.ToList();
+				newGradients[0] = new GradientLevelPair(gradient, gradients[0].Curve);
+				elementValues.Add(element, new Tuple<object, PropertyDescriptor>(property.Descriptor.GetValue(element.EffectNode.Effect), property.Descriptor));
+				UpdateEffectProperty(property.Descriptor, element, newGradients);
+				return;
+			}
 
 			var parameterPickerControls = CreateGradientLevelPairPickerControls(property, gradients);
 
