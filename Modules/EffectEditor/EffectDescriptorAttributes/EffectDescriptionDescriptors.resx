@@ -816,4 +816,49 @@
   <data name="StrobeSource" xml:space="preserve">
     <value>Selects what source is used to determine change.</value>
   </data>
+  <data name="XSpeed" xml:space="preserve">
+    <value>Horizontal Center Speed</value>
+  </data>
+  <data name="XSpeedVariation" xml:space="preserve">
+    <value>Randomly adjust the Speed around the center Speed by the amount of variation.</value>
+  </data>
+  <data name="YSpeed" xml:space="preserve">
+    <value>Horizontal Center Speed</value>
+  </data>
+  <data name="YSpeedVariation" xml:space="preserve">
+    <value>Randomly adjust the Speed around the center Speed by the amount of variation.</value>
+  </data>
+  <data name="MovementSpeed" xml:space="preserve">
+    <value>Adjusts the Meteor direction based on X and Y Speed curves.</value>
+  </data>
+  <data name="Wobble" xml:space="preserve">
+    <value>Moves the Meteors from side to side.</value>
+  </data>
+  <data name="WobbleVariation" xml:space="preserve">
+    <value>Randomly adjust the Wobble around the Wobble level by the amount of variation.</value>
+  </data>
+  <data name="MovementMode" xml:space="preserve">
+    <value>Adjusts the type of movement.</value>
+  </data>
+  <data name="BorderHeight" xml:space="preserve">
+    <value>Adjust the Border height.</value>
+  </data>
+  <data name="BorderThickness" xml:space="preserve">
+    <value>Adjust the Thickness of the border.</value>
+  </data>
+  <data name="FilmSpinner" xml:space="preserve">
+    <value>Adds a film spinner around the number.</value>
+  </data>
+  <data name="FilmSpinnerColors" xml:space="preserve">
+    <value>Controls the swipe color of the film spinner.</value>
+  </data>
+  <data name="FilmSpinnerGradientMode" xml:space="preserve">
+    <value>Controls how the gradient is applied to the swipe color of the film spinner.</value>
+  </data>
+  <data name="IntensityPerIteration" xml:space="preserve">
+    <value>Adjusts the Intensity over each iteration.</value>
+  </data>
+  <data name="ColorPerStep" xml:space="preserve">
+    <value>When enabled the color will change for each Step variation.</value>
+  </data>
 </root>

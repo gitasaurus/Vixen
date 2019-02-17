@@ -98,7 +98,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 							AddMultipleEffects(e.GridTime, effectDesriptor.EffectName, (Guid) contextMenuItemEffect.Tag, e.Row);
 						}
 						else //add single
-							AddNewEffectById((Guid) contextMenuItemEffect.Tag, e.Row, e.GridTime, TimeSpan.FromSeconds(2), true);
+							AddNewEffectById((Guid) contextMenuItemEffect.Tag, e.Row, e.GridTime, GetDefaultEffectDuration(e.GridTime), true);
 					}
 				};
 
@@ -244,7 +244,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 			contextMenuItemAlignment.DropDown.Items.Add(contextMenuItemAlignEndToMark);
 			contextMenuItemAlignment.DropDown.Items.Add(contextMenuItemAlignBothToMark);
 
-			if (TimelineControl.SelectedElements.Count() > 1 || (TimelineControl.SelectedElements.Any() && !element.Selected))
+			if (TimelineControl.SelectedElements.Count() > 1 || TimelineControl.SelectedElements.Any() && element != null && !element.Selected)
 			{
 				contextMenuItemDistributeEqually.Enabled = true;
 				contextMenuItemDistDialog.Enabled = true;

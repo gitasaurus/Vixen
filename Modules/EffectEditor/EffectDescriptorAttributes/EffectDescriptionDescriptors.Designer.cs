@@ -224,6 +224,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Adjust the Border height..
+        /// </summary>
+        internal static string BorderHeight {
+            get {
+                return ResourceManager.GetString("BorderHeight", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enables Simple or Advanced border width control..
         /// </summary>
         internal static string BorderMode {
@@ -247,6 +256,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string BorderSize {
             get {
                 return ResourceManager.GetString("BorderSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Adjust the Thickness of the border..
+        /// </summary>
+        internal static string BorderThickness {
+            get {
+                return ResourceManager.GetString("BorderThickness", resourceCulture);
             }
         }
         
@@ -454,6 +472,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string ColorHandling {
             get {
                 return ResourceManager.GetString("ColorHandling", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When enabled the color will change for each Step variation..
+        /// </summary>
+        internal static string ColorPerStep {
+            get {
+                return ResourceManager.GetString("ColorPerStep", resourceCulture);
             }
         }
         
@@ -701,6 +728,33 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Adds a film spinner around the number..
+        /// </summary>
+        internal static string FilmSpinner {
+            get {
+                return ResourceManager.GetString("FilmSpinner", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the swipe color of the film spinner..
+        /// </summary>
+        internal static string FilmSpinnerColors {
+            get {
+                return ResourceManager.GetString("FilmSpinnerColors", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls how the gradient is applied to the swipe color of the film spinner..
+        /// </summary>
+        internal static string FilmSpinnerGradientMode {
+            get {
+                return ResourceManager.GetString("FilmSpinnerGradientMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Selects what source is used to determine explosions..
         /// </summary>
         internal static string FireworksSource {
@@ -944,6 +998,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Adjusts the Intensity over each iteration..
+        /// </summary>
+        internal static string IntensityPerIteration {
+            get {
+                return ResourceManager.GetString("IntensityPerIteration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Specifies how often the effect should switch in milliseconds..
         /// </summary>
         internal static string Interval {
@@ -1174,6 +1237,24 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string Movement {
             get {
                 return ResourceManager.GetString("Movement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Adjusts the type of movement..
+        /// </summary>
+        internal static string MovementMode {
+            get {
+                return ResourceManager.GetString("MovementMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Adjusts the Meteor direction based on X and Y Speed curves..
+        /// </summary>
+        internal static string MovementSpeed {
+            get {
+                return ResourceManager.GetString("MovementSpeed", resourceCulture);
             }
         }
         
@@ -2141,6 +2222,24 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Moves the Meteors from side to side..
+        /// </summary>
+        internal static string Wobble {
+            get {
+                return ResourceManager.GetString("Wobble", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Randomly adjust the Wobble around the Wobble level by the amount of variation..
+        /// </summary>
+        internal static string WobbleVariation {
+            get {
+                return ResourceManager.GetString("WobbleVariation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Can help to adjust the position of the effect. May not work in all cases..
         /// </summary>
         internal static string XOffset {
@@ -2150,11 +2249,47 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Horizontal Center Speed.
+        /// </summary>
+        internal static string XSpeed {
+            get {
+                return ResourceManager.GetString("XSpeed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Randomly adjust the Speed around the center Speed by the amount of variation..
+        /// </summary>
+        internal static string XSpeedVariation {
+            get {
+                return ResourceManager.GetString("XSpeedVariation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Can help to adjust the position of the effect. May not work in all cases..
         /// </summary>
         internal static string YOffset {
             get {
                 return ResourceManager.GetString("YOffset", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Horizontal Center Speed.
+        /// </summary>
+        internal static string YSpeed {
+            get {
+                return ResourceManager.GetString("YSpeed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Randomly adjust the Speed around the center Speed by the amount of variation..
+        /// </summary>
+        internal static string YSpeedVariation {
+            get {
+                return ResourceManager.GetString("YSpeedVariation", resourceCulture);
             }
         }
     }

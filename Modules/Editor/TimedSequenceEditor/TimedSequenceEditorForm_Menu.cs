@@ -6,6 +6,7 @@ using System.Linq;
 using System.Windows.Forms;
 using Common.Controls;
 using Common.Controls.Timeline;
+using Common.Controls.TimelineControl;
 using VixenModules.App.Curves;
 using VixenModules.App.LipSyncApp;
 using VixenModules.Media.Audio;
@@ -34,6 +35,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 
 		private void toolStripMenuItem_AutoSave_Click(object sender, EventArgs e)
 		{
+			fileToolStripButton_AutoSave.Checked = autoSaveToolStripMenuItem.Checked;
 			SetAutoSave();
 		}
 
@@ -64,8 +66,8 @@ namespace VixenModules.Editor.TimedSequenceEditor
 
 		private void toolStripMenuItem_Loop_CheckedChanged(object sender, EventArgs e)
 		{
-			toolStripButton_Loop.Checked = toolStripMenuItem_Loop.Checked;
-			if (toolStripButton_Loop.Checked && delayOffToolStripMenuItem.Checked != true)
+			playBackToolStripButton_Loop.Checked = toolStripMenuItem_Loop.Checked;
+			if (playBackToolStripButton_Loop.Checked && delayOffToolStripMenuItem.Checked != true)
 			{
 				//No way, we're not doing both! Turn off the delay.
 				foreach (ToolStripMenuItem item in playOptionsToolStripMenuItem.DropDownItems)
@@ -83,7 +85,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 			ClearDelayPlayItemChecks();
 			delayOffToolStripMenuItem.Checked = true;
 			toolStripStatusLabel3.Visible = toolStripStatusLabel_delayPlay.Visible = false;
-			toolStripButton_Play.ToolTipText = @"Play F5";
+			playBackToolStripButton_Play.ToolTipText = @"Play F5";
 		}
 
 		private void delay5SecondsToolStripMenuItem_Click(object sender, EventArgs e)
@@ -151,7 +153,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 		private void toolStripMenuItem_Paste_Click(object sender, EventArgs e)
 		{
 			Row targetRow = TimelineControl.SelectedRow ?? TimelineControl.ActiveRow ?? TimelineControl.TopVisibleRow;
-			ClipboardPaste(targetRow.Selected ? TimeSpan.Zero : TimelineControl.CursorPosition);
+			ClipboardPaste(targetRow.Selected ? TimeSpan.Zero : _timeLineGlobalStateManager.CursorPosition);
 		}
 
 		private void undoToolStripMenuItem_Click(object sender, EventArgs e)
@@ -191,7 +193,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 
 		private void toolStripMenuItem_SnapTo_CheckedChanged(object sender, EventArgs e)
 		{
-			toolStripButton_SnapTo.Checked = toolStripMenuItem_SnapTo.Checked;
+			modeToolStripButton_SnapTo.Checked = toolStripMenuItem_SnapTo.Checked;
 			TimelineControl.grid.EnableSnapTo = toolStripMenuItem_SnapTo.Checked;
 		}
 
@@ -255,6 +257,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 		{
 			TimelineControl.grid.aCadStyleSelectionBox = cADStyleSelectionBoxToolStripMenuItem.Checked;
 		}
+
 		#endregion
 
 		#region View Menu
@@ -342,8 +345,15 @@ namespace VixenModules.Editor.TimedSequenceEditor
 
 		private void gridWindowToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			HandleDockContentToolStripMenuClick(GridForm, DockState.Document);
+			//Gridform or the main timeline should not be closed.
+			if (!GridForm.IsDisposed)
+			{
+				if (GridForm.IsHidden || GridForm.DockState == DockState.Unknown)
+				{
+					GridForm.Show(dockPanel, DockState.Document);
+				}
 			}
+		}
 			
 		private void effectEditorWindowToolStripMenuItem_Click(object sender, EventArgs e)
 		{
@@ -502,7 +512,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
                         result.EffectModelCandidates.Add(modelCandidate, rownum);
                         if (startTime < result.EarliestStartTime)
                             result.EarliestStartTime = startTime;
-                        effect.Render();
+                        effect.PreRender();
                     }                   
                     IDataObject dataObject = new DataObject(ClipboardFormatName);
                     dataObject.SetData(result);
@@ -586,7 +596,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 		private void bulkEffectMoveToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 
-			var dialog = new BulkEffectMoveForm(TimelineControl.grid.CursorPosition);
+			var dialog = new BulkEffectMoveForm(_timeLineGlobalStateManager.CursorPosition);
 			using (dialog)
 			{
 				if (dialog.ShowDialog() == DialogResult.OK)
