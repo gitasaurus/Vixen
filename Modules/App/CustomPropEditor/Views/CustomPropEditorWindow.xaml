@@ -19,6 +19,7 @@
 				</ResourceDictionary.MergedDictionaries>
 				<commonConverters:InverseBooleanConverter x:Key="InverseBooleanConverter"/>
 				<commonConverters:AdditionConverter x:Key="AdditionConverter"/>
+				<commonConverters:ColorToSolidBrushConverter x:Key="ColorToSolidBrushConverter"/>
 		</ResourceDictionary>
 		</Window.Resources>
 
@@ -97,6 +98,9 @@
 					</controls:SliderMenuItem>
 				</MenuItem>
 			</MenuItem>
+			<MenuItem Header="Tools">
+				<MenuItem Header="Vendor Browser" Command="{Binding OpenVendorBrowserCommand}"/>
+			</MenuItem>
 			<MenuItem Header="Options">
 				<MenuItem Header="Preferences" Command="{Binding ColorOptionsCommand}"/>
 			</MenuItem>
@@ -135,18 +139,58 @@
 				<Grid.RowDefinitions>
 					<RowDefinition Height="3*"/>
 					<RowDefinition Height="Auto"/>
-					<RowDefinition Height="1.75*"/>
+					<RowDefinition Height="1.85*"/>
 					<RowDefinition Height="Auto"/>
 				</Grid.RowDefinitions>
 
 				<views1:ElementTree Grid.Column="0" Grid.Row="0" />
-				
-				<TabControl Background="{StaticResource BackColorBrush}"
-				            Grid.Row="2" Grid.Column="0"
-				            Width="Auto" Margin="5,5,10,5">
-					<TabItem Header="General">
-						<wpfPropertyGrid:PropertyGrid Background="{StaticResource DisabledShadow}"
+
+				<TabControl  Grid.Row="2" Grid.Column="0" Background="{DynamicResource BackColorBrush}"
+				             Width="Auto" Margin="5,5,10,5">
+					<TabItem Header="Prop Info">
+						<TabControl Width="Auto">
+							<TabItem Header="General">
+								<wpfPropertyGrid:PropertyGrid Background="{StaticResource DisabledShadow}"
 						                              ItemSource="{Binding}"
+						                              ShowAttachedProperties="False"
+						                              ShowReadOnlyProperties="True"
+						                              PropertyFilterVisibility="Collapsed"
+						                              Margin="5">
+									<wpfPropertyGrid:PropertyGrid.Resources>
+										<ResourceDictionary>
+											<ResourceDictionary.MergedDictionaries>
+												<wpfPropertyGrid:KaxamlTheme/>
+											</ResourceDictionary.MergedDictionaries>
+										</ResourceDictionary>
+									</wpfPropertyGrid:PropertyGrid.Resources>
+								</wpfPropertyGrid:PropertyGrid>
+							</TabItem>
+							<TabItem Header="Physical">
+								<views1:PhysicalMetadataView DataContext="{Binding PhysicalMetadata}"/>
+							</TabItem>
+							<TabItem Header="Vendor">
+								<views1:VendorMetadataView DataContext="{Binding VendorMetadata}"/>
+							</TabItem>
+							<TabItem Header="Notes">
+								<TabPanel Name="Panel" Background="{StaticResource DisabledShadow}">
+									<TextBox Text="{Binding InformationMetadata.Notes}"
+									        Margin="5,5,0,0"
+									        TextWrapping="Wrap" 
+									        AcceptsReturn="True" 
+									        AcceptsTab="True" 
+									        SpellCheck.IsEnabled="True" 
+									        Height="{Binding Path=ActualHeight, ElementName=Panel, Converter={StaticResource AdditionConverter}, ConverterParameter=-10}"
+									        Width="{Binding Path=ActualWidth, ElementName=Panel, Converter={StaticResource AdditionConverter}, ConverterParameter=-10}"
+											VerticalScrollBarVisibility="Auto"
+											HorizontalScrollBarVisibility="Disabled"/>
+
+								</TabPanel>
+							</TabItem>
+						</TabControl>
+					</TabItem>
+					<TabItem Header="Element Info">
+						<wpfPropertyGrid:PropertyGrid Background="{StaticResource DisabledShadow}"
+						                              ItemSource="{Binding ElementTreeViewModel.SelectedItem}"
 						                              ShowAttachedProperties="False"
 						                              ShowReadOnlyProperties="True"
 						                              PropertyFilterVisibility="Collapsed"
@@ -160,28 +204,9 @@
 							</wpfPropertyGrid:PropertyGrid.Resources>
 						</wpfPropertyGrid:PropertyGrid>
 					</TabItem>
-					<TabItem Header="Physical">
-						<views1:PhysicalMetadataView DataContext="{Binding PhysicalMetadata}"/>
-					</TabItem>
-					<TabItem Header="Vendor">
-						<views1:VendorMetadataView DataContext="{Binding VendorMetadata}"/>
-					</TabItem>
-					<TabItem Header="Notes">
-						<TabPanel Name="Panel" Background="{StaticResource DisabledShadow}">
-							<TextBox Text="{Binding InformationMetadata.Notes}"
-									        Margin="5,5,0,0"
-									        TextWrapping="Wrap" 
-									        AcceptsReturn="True" 
-									        AcceptsTab="True" 
-									        SpellCheck.IsEnabled="True" 
-									        Height="{Binding Path=ActualHeight, ElementName=Panel, Converter={StaticResource AdditionConverter}, ConverterParameter=-10}"
-									        Width="{Binding Path=ActualWidth, ElementName=Panel, Converter={StaticResource AdditionConverter}, ConverterParameter=-10}"
-											VerticalScrollBarVisibility="Auto"
-											HorizontalScrollBarVisibility="Disabled"/>
-
-						</TabPanel>
-					</TabItem>
 				</TabControl>
+				
+				
 					
 				<!--</Border>-->
 
@@ -229,8 +254,15 @@
 							</Button>
 							<Button Command="{Binding DrawingPanelViewModel.DistributeVerticallyCommand}" ToolTip="Distribute Vertical" >
 								<Image Source="/CustomPropEditor;component/Images/buttonDistributeVertical.png" Height="20"/>
-							</Button>
-							<Separator />
+                            </Button>
+                            <Separator />
+                            <Button Command="{Binding DrawingPanelViewModel.FlipHorizontalCommand}" ToolTip="Flip Horizontal">
+                                <Image Source="/CustomPropEditor;component/Images/buttonFlipHorizontal.png" Height="20"/>
+                            </Button>
+                            <Button Command="{Binding DrawingPanelViewModel.FlipVerticalCommand}" ToolTip="Flip Vertical">
+                                <Image Source="/CustomPropEditor;component/Images/buttonFlipVertical.png" Height="20"/>
+                            </Button>
+                            <Separator />
 							<Button Command="{Binding DrawingPanelViewModel.IncreaseLightSizeCommand}" ToolTip="Increase Light Size">
 								<Image Source="/CustomPropEditor;component/Images/buttonBulbBigger.png" Height="20"/>
 							</Button>
@@ -261,10 +293,10 @@
 											</Path.Data>
 											<Path.Style>
 												<Style TargetType="Path">
-													<Setter Property="Fill" Value="{Binding Path=DataContext.DrawingPanelViewModel.LightColor, RelativeSource={RelativeSource AncestorType=ItemsControl}, Mode=OneWay}"/>
+													<Setter Property="Fill" Value="{Binding Path=DataContext.DrawingPanelViewModel.LightColor, RelativeSource={RelativeSource AncestorType=ItemsControl}, Mode=OneWay, Converter={StaticResource ColorToSolidBrushConverter}}"/>
 													<Style.Triggers>
 														<DataTrigger Binding="{Binding IsSelected}" Value="True">
-															<Setter Property="Fill" Value="{Binding Path=DataContext.DrawingPanelViewModel.SelectedLightColor, RelativeSource={RelativeSource AncestorType=ItemsControl}, Mode=OneWay}"></Setter>
+															<Setter Property="Fill" Value="{Binding Path=DataContext.DrawingPanelViewModel.SelectedLightColor, RelativeSource={RelativeSource AncestorType=ItemsControl}, Mode=OneWay,Converter={StaticResource ColorToSolidBrushConverter}}"></Setter>
 														</DataTrigger>
 													</Style.Triggers>
 												</Style>

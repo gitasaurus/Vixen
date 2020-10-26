@@ -19,8 +19,7 @@ namespace VixenModules.Effect.SnowStorm
 		private SnowStormData _data;
 		private double _gradientPosition = 0;
 		private List<SnowstormClass> _snowstormItems;
-		private int _lastSnowstormCount = 0;
-
+		
 		public SnowStorm()
 		{
 			_data = new SnowStormData();
@@ -464,7 +463,7 @@ namespace VixenModules.Effect.SnowStorm
 
 		private double CalculateSpeed(double intervalPos)
 		{
-			var value = ScaleCurveToValue(SpeedCurve.GetValue(intervalPos), 100, 1);
+			var value = ScaleCurveToValue(SpeedCurve.GetValue(intervalPos), 100, 1) * FrameTime / 50d;
 			if (value < 1) value = 1;
 
 			return value;

@@ -60,13 +60,19 @@ namespace VixenModules.App.ExportWizard
 			outputFormatComboBox.SelectedItem = _data.ActiveProfile.Format;
 
 			resolutionComboBox.SelectedItem = _data.ActiveProfile.Interval.ToString();
+			//Allow for non standard resolutions to be restored.
+			if (resolutionComboBox.Text != _data.ActiveProfile.Interval.ToString())
+			{
+				resolutionComboBox.Text = _data.ActiveProfile.Interval.ToString();
+			}
 			txtOutputFolder.Text = _data.ActiveProfile.OutputFolder;
 
 			chkFppIncludeAudio.Checked = chkIncludeAudio.Checked = _data.ActiveProfile.IncludeAudio;
 			chkRenameAudio.Enabled = btnAudioOutputFolder.Enabled = lblAudioExportPath.Enabled = txtAudioOutputFolder.Enabled = _data.ActiveProfile.IncludeAudio;
 			chkRenameAudio.Checked = _data.ActiveProfile.RenameAudio;
+			chkCompress.Checked = _data.ActiveProfile.EnableCompression;
 			
-			grpFalcon.Visible = _data.ActiveProfile.IsFalconFormat;
+			grpFalcon.Visible = chkCompress.Enabled = _data.Export.IsFalconFormat(_data.ActiveProfile.Format); 
 			grpAudio.Visible = grpSequence.Visible = !grpFalcon.Visible;
 			chkCreateUniverseFile.Checked = _data.ActiveProfile.CreateUniverseFile;
 			chkBackupUniverseFile.Checked = _data.ActiveProfile.BackupUniverseFile;
@@ -120,7 +126,7 @@ namespace VixenModules.App.ExportWizard
 
 		private void txtAudioOutputFolder_Leave(object sender, EventArgs e)
 		{
-			_data.ActiveProfile.OutputFolder = txtAudioOutputFolder.Text;
+			_data.ActiveProfile.AudioOutputFolder = txtAudioOutputFolder.Text;
 			ValidatePath(_data.ActiveProfile.AudioOutputFolder);
 			_WizardStageChanged();
 		}
@@ -160,6 +166,7 @@ namespace VixenModules.App.ExportWizard
 			if (CanTestPath() && Directory.Exists(path))
 			{
 				_data.ActiveProfile.FalconOutputFolder = path;
+				_WizardStageChanged();
 				return true;
 			}
 		
@@ -180,7 +187,7 @@ namespace VixenModules.App.ExportWizard
 					messageBox = new MessageBoxForm($"Unable to create the target directory.\n{e.Message}",
 						"Error creating directory.", MessageBoxButtons.OK, SystemIcons.Error);
 					messageBox.ShowDialog(this);
-					Logging.Error(e, "An error occured trying to create the Falcon target directory structure.");
+					Logging.Error(e, "An error occurred trying to create the Falcon target directory structure.");
 				}
 			}
 
@@ -191,9 +198,11 @@ namespace VixenModules.App.ExportWizard
 		{
 			get
 			{
+				if (!IsIntervalValid()) return false;
 				if (_data.ActiveProfile.IsFalconFormat)
 				{
-					if (CanTestPath() && Directory.Exists(_data.ActiveProfile.FalconOutputFolder))
+					if (CanTestPath() && 
+					    Directory.Exists(_data.ActiveProfile.IsFalconFormat ? _data.ActiveProfile.FalconOutputFolder: _data.ActiveProfile.OutputFolder))
 					{
 						return true;
 					}
@@ -211,6 +220,16 @@ namespace VixenModules.App.ExportWizard
 			}
 		}
 
+		private bool IsIntervalValid()
+		{
+			if (Int32.TryParse(resolutionComboBox.Text, out int interval))
+			{
+				_data.ActiveProfile.Interval = interval;
+				return true;
+			}
+
+			return false;
+		}
 		private void ValidatePath(string path)
 		{
 			if (!Directory.Exists(path))
@@ -231,7 +250,7 @@ namespace VixenModules.App.ExportWizard
 						messageBox = new MessageBoxForm($"Unable to create the target directory.\n{e.Message}",
 							"Error creating directory.", MessageBoxButtons.OK, SystemIcons.Error);
 						messageBox.ShowDialog(this);
-						Logging.Error(e, "An error occured trying to create the Falcon target directory structure.");
+						Logging.Error(e, "An error occurred trying to create the Falcon target directory structure.");
 					}
 				}
 			}
@@ -240,11 +259,14 @@ namespace VixenModules.App.ExportWizard
 		private bool CanTestPath()
 		{
 			bool success = true;
-			if (!string.IsNullOrEmpty(_data.ActiveProfile.FalconOutputFolder))
+			var pathToTest = _data.ActiveProfile.IsFalconFormat
+				? _data.ActiveProfile.OutputFolder
+				: _data.ActiveProfile.FalconOutputFolder;
+			if (!string.IsNullOrEmpty(pathToTest))
 			{
 				try
 				{
-					Uri uri = new Uri(_data.ActiveProfile.FalconOutputFolder);
+					Uri uri = new Uri(pathToTest);
 					if (uri.HostNameType != UriHostNameType.Unknown && !string.IsNullOrEmpty(uri.Host))
 					{
 						success = PingHost(uri.Host);
@@ -252,6 +274,7 @@ namespace VixenModules.App.ExportWizard
 				}
 				catch (Exception e)
 				{
+					Logging.Error(e, "Error determining if path can be tested.");
 					success = false;
 				}
 				
@@ -297,20 +320,21 @@ namespace VixenModules.App.ExportWizard
 		{
 			ComboBox comboBox = (ComboBox)sender;
 			_data.ActiveProfile.Format = comboBox.SelectedItem.ToString();
-			grpFalcon.Visible = _data.ActiveProfile.IsFalconFormat;
+			grpFalcon.Visible = _data.Export.IsFalconFormat(_data.ActiveProfile.Format);
 			grpAudio.Visible = grpSequence.Visible = !grpFalcon.Visible;
+			chkCompress.Enabled =  _data.Export.CanCompress(_data.ActiveProfile.Format);
 			if (_data.ActiveProfile.IsFalconFormat)
 			{
+				chkFppIncludeAudio.Checked = _data.ActiveProfile.IncludeAudio;
 				UpdateFalconPaths(_data.ActiveProfile.FalconOutputFolder);
 				ValidateFalconOutputFolder();
 			}
+			else
+			{
+				chkIncludeAudio.Checked = _data.ActiveProfile.IncludeAudio;
+				txtAudioOutputFolder.Text = _data.ActiveProfile.AudioOutputFolder;
+			}
 			_WizardStageChanged();
-		}
-
-		private void resolutionComboBox_SelectedIndexChanged(object sender, EventArgs e)
-		{
-			ComboBox comboBox = (ComboBox)sender;
-			_data.ActiveProfile.Interval = Convert.ToInt32(comboBox.SelectedItem);
 		}
 
 		private void chkIncludeAudio_CheckedChanged(object sender, EventArgs e)
@@ -351,6 +375,16 @@ namespace VixenModules.App.ExportWizard
 		private void txtFalconOutputFolder_TextChanged(object sender, EventArgs e)
 		{
 			//UpdateFalconPaths(txtFalconOutputFolder.Text);
+		}
+
+		private void chkCompress_CheckedChanged(object sender, EventArgs e)
+		{
+			_data.ActiveProfile.EnableCompression = chkCompress.Checked;
+		}
+
+		private void resolutionComboBox_TextChanged(object sender, EventArgs e)
+		{
+			_WizardStageChanged();
 		}
 	}
 }

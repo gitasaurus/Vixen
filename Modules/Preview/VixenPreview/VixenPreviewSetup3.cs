@@ -140,7 +140,7 @@ namespace VixenModules.Preview.VixenPreview
 			PreviewItemsAlignNew += vixenpreviewControl_PreviewItemsAlignNew;
 
 			elementsForm = new VixenPreviewSetupElementsDocument(previewForm.Preview);
-			propertiesForm = new VixenPreviewSetupPropertiesDocument();
+			propertiesForm = new VixenPreviewSetupPropertiesDocument(previewForm.Preview);
 
 			previewForm.Show(dockPanel, WeifenLuo.WinFormsUI.Docking.DockState.Document);
 			elementsForm.Show(dockPanel, WeifenLuo.WinFormsUI.Docking.DockState.DockLeft);
@@ -211,12 +211,12 @@ namespace VixenModules.Preview.VixenPreview
 		}
 
 		private void OnDeSelectDisplayItem(object sender, Shapes.DisplayItem displayItem) {
-			propertiesForm.ShowSetupControl(null);
+			propertiesForm.ClearSetupControl();
 		}
 
 		private void OnSelectDisplayItem(object sender, Shapes.DisplayItem displayItem) {
 			Shapes.DisplayItemBaseControl setupControl = displayItem.Shape.GetSetupControl();
-
+			elementsForm.ClearSelectedNodes();
 			if (setupControl != null) {
 				propertiesForm.ShowSetupControl(setupControl);
 			}
@@ -562,8 +562,8 @@ namespace VixenModules.Preview.VixenPreview
 							p.Node.Properties.Add(LocationDescriptor._typeId);
 
 						var prop = p.Node.Properties.Get(LocationDescriptor._typeId);
-					    ((LocationData) prop.ModuleData).X = p.IsHighPrecision ? (int)p.Location.X : p.X + Convert.ToInt32(Data.LocationOffset.X);
-						((LocationData) prop.ModuleData).Y = p.IsHighPrecision ? (int)p.Location.Y : p.Y + Convert.ToInt32(Data.LocationOffset.Y);
+					    ((LocationData) prop.ModuleData).X = p.IsHighPrecision ? (int)(p.Location.X + Data.LocationOffset.X): p.X + Convert.ToInt32(Data.LocationOffset.X);
+						((LocationData) prop.ModuleData).Y = p.IsHighPrecision ? (int)(p.Location.Y + Data.LocationOffset.Y): p.Y + Convert.ToInt32(Data.LocationOffset.Y);
 					}
 				}
 				Cursor = Cursors.Default;
@@ -635,22 +635,30 @@ namespace VixenModules.Preview.VixenPreview
 
 		private void undoButton_ButtonClick(object sender, EventArgs e)
 		{
+			previewForm.Preview.BeginUpdate();
 			_undoMgr.Undo();
+			previewForm.Preview.EndUpdate();
 		}
 
 		private void undoButton_ItemChosen(object sender, UndoMultipleItemsEventArgs e)
 		{
+			previewForm.Preview.BeginUpdate();
 			_undoMgr.Undo(e.NumItems);
+			previewForm.Preview.EndUpdate();
 		}
 
 		private void redoButton_ButtonClick(object sender, EventArgs e)
 		{
+			previewForm.Preview.BeginUpdate();
 			_undoMgr.Redo();
+			previewForm.Preview.EndUpdate();
 		}
 
 		private void redoButton_ItemChosen(object sender, UndoMultipleItemsEventArgs e)
 		{
+			previewForm.Preview.BeginUpdate();
 			_undoMgr.Redo(e.NumItems);
+			previewForm.Preview.EndUpdate();
 		}
 
 		private void _undoMgr_UndoItemsChanged(object sender, EventArgs e)

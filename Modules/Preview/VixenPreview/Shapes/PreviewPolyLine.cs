@@ -25,49 +25,63 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 		{
 			ZoomLevel = zoomLevel;
 			AddPoint(PointToZoomPoint(point1));
+			Reconfigure(selectedNode);
+			Creating = true;
+		}
 
-            if (selectedNode != null)
-            {
-                List<ElementNode> children = PreviewTools.GetLeafNodes(selectedNode);
-                // is this a single node?
-                if (children.Count == 0)
-                {
-                    StringType = StringTypes.Standard;
-                    PixelCount = 2;
-                    _pixels[0].PixelColor = Color.White;
-                    if (selectedNode.IsLeaf)
-                        _pixels[0].Node = selectedNode;
-                    Creating = true;
-                    CreateDefaultPixels = true;
-                }
-                else
-                {
-                    StringType = StringTypes.Pixel;
-                    PixelCount = children.Count;
-                    // Just add the pixels, they will get layed out next
-                    int pixelNum = 0;
-                    foreach (ElementNode child in children)
-                    {
-                        {
-                            PreviewPixel pixel = _pixels[pixelNum];
-                            pixel.Node = child;
-                            pixel.NodeId = child.Id;
-                            pixel.PixelColor = Color.White;
-                        }
-                        pixelNum++;
-                    }
-                    Creating = true;
-                }
-            }
-            else
-            {
-                Creating = true;
-                CreateDefaultPixels = true;
-                PixelCount = 2;
-            }
+		#region Overrides of PreviewBaseShape
 
+		/// <inheritdoc />
+		internal sealed override void Reconfigure(ElementNode node)
+		{
+			if (node != null)
+			{
+				List<ElementNode> children = PreviewTools.GetLeafNodes(node);
+				// is this a single node?
+				if (children.Count == 0)
+				{
+					StringType = StringTypes.Standard;
+					PixelCount = 2;
+					_pixels[0].PixelColor = Color.White;
+					if (node.IsLeaf)
+						_pixels[0].Node = node;
+					//Creating = true;
+					CreateDefaultPixels = true;
+				}
+				else
+				{
+					StringType = StringTypes.Pixel;
+					PixelCount = children.Count;
+					// Just add the pixels, they will get layed out next
+					int pixelNum = 0;
+					foreach (ElementNode child in children)
+					{
+						{
+							PreviewPixel pixel = _pixels[pixelNum];
+							pixel.Node = child;
+							pixel.NodeId = child.Id;
+							pixel.PixelColor = Color.White;
+						}
+						pixelNum++;
+					}
+					//Creating = true;
+				}
+			}
+			else
+			{
+				//Creating = true;
+				CreateDefaultPixels = true;
+				PixelCount = 2;
+			}
+
+			if (Creating == true)
+			{
+				EndCreation();
+			}
 			Layout();
 		}
+
+		#endregion
 
 		[OnDeserialized]
 		private new void OnDeserialized(StreamingContext context)
@@ -512,11 +526,17 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 		{
             PreviewPolyLine newLine = (PreviewPolyLine)this.MemberwiseClone();
 
-			//newLine._pixels = new List<Preview Pixel>();
+			newLine._pixels = new List<PreviewPixel>();
 
 			foreach (PreviewPixel pixel in _pixels) {
-				newLine.AddPixel(pixel.X, pixel.Y);
+				newLine._pixels.Add(pixel.Clone());
 			}
+
+            newLine._points = new List<PreviewPoint>();
+            foreach (var previewPoint in _points)
+            {
+	            newLine._points.Add(previewPoint.Copy());
+            }
 			return newLine;
 		}
 

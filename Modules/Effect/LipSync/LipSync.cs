@@ -32,7 +32,6 @@ namespace VixenModules.Effect.LipSync
 		private static Dictionary<PhonemeType, Bitmap> _phonemeBitmaps = null;
 		private readonly LipSyncMapLibrary _library = null;
 		private List<IMark> _marks = null;
-
 		private FastPictureEffect _thePic;
 		
 		static LipSync()
@@ -121,7 +120,7 @@ namespace VixenModules.Effect.LipSync
 			}
 		}
 
-		private void RenderPropertyMapElements(ElementNode element, PhonemeType phoneme)
+		private void RenderPropertyMapElements(IElementNode element, PhonemeType phoneme)
 		{
 			var fm = element.Properties.Get(FaceDescriptor.ModuleId) as FaceModule;
 			if (fm == null) return;
@@ -199,7 +198,7 @@ namespace VixenModules.Effect.LipSync
 			}
 		}
 
-		private void RenderMapElements(LipSyncMapData mapData, ElementNode element, PhonemeType phoneme)
+		private void RenderMapElements(LipSyncMapData mapData, IElementNode element, PhonemeType phoneme)
 		{
 			LipSyncMapItem item = mapData.FindMapItem(element.Id);
 			if (item == null) return;
@@ -380,6 +379,22 @@ namespace VixenModules.Effect.LipSync
 
 		private void SetupMarks()
 		{
+			if (MarkCollections == null || MarkCollections.All(x => x.CollectionType == MarkCollectionType.Generic))
+			{
+				LipSyncMode = LipSyncMode.Phoneme;
+				return;
+			}
+
+			if (string.IsNullOrEmpty(MarkCollectionId))
+			{
+				var dmc = MarkCollections.FirstOrDefault(x => x.CollectionType == MarkCollectionType.Phoneme);
+				if (dmc != null && string.IsNullOrEmpty(MarkCollectionId))
+				{
+					MarkCollectionId = dmc.Name;
+				}
+			}
+			
+			
 			IMarkCollection mc = MarkCollections.FirstOrDefault(x => x.Id == _data.MarkCollectionId);
 			if (mc != null)
 			{
@@ -519,6 +534,17 @@ namespace VixenModules.Effect.LipSync
 					SetLipsyncModeBrowsables();
 					IsDirty = true;
 					OnPropertyChanged();
+					if (_data.LipSyncMode == LipSyncMode.MarkCollection && _data.MarkCollectionId == Guid.Empty)
+					{
+						if (MarkCollections.Any())
+						{
+							var mc = MarkCollections.FirstOrDefault(x => x.CollectionType == MarkCollectionType.Phoneme);
+							if (mc != null)
+							{
+								MarkCollectionId = mc.Name;
+							}
+						}
+					}
 				}
 			}
 		}

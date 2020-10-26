@@ -19,11 +19,12 @@ namespace Common.Controls
 	{
 		// sets of data to keep track of which items in the treeview are open, selected, visible etc., so that
 		// when we reload the tree, we can keep it looking relatively consistent with what the user had before.
-		private HashSet<string> _expandedNodes; // TreeNode paths that are expanded
+		private readonly HashSet<string> _expandedNodes = new HashSet<string>(); // TreeNode paths that are expanded
 		private HashSet<string> _selectedNodes; // TreeNode paths that are selected
 		private List<string> _topDisplayedNodes; // TreeNode paths that are at the top of the view. Should only
 		// need one, but will have multiple in case the top node is deleted.
 		private static NLog.Logger Logging = NLog.LogManager.GetCurrentClassLogger();
+		private const string VirtualNodeName = @"VIRT";
 
 		public ElementTree()
 		{
@@ -35,7 +36,29 @@ namespace Common.Controls
 			treeview.DragOverVerify += treeviewDragVerifyHandler;
 			treeview.DragStart += treeview_DragStart;
 
+			treeview.BeforeExpand += Treeview_BeforeExpand;
+			treeview.AfterCollapse += TreeviewOnAfterCollapse;
 			AllowDragging = true;
+			AllowPropertyEdit = true;
+			AllowWireExport = true;
+		}
+
+		private void TreeviewOnAfterCollapse(object sender, TreeViewEventArgs e)
+		{
+			_expandedNodes.Remove(GenerateTreeNodeFullPath(e.Node, treeview.PathSeparator));
+		}
+
+		private void Treeview_BeforeExpand(object sender, TreeViewCancelEventArgs e)
+		{
+			if (e.Node.Tag is ElementNode elementNode)
+			{
+				if (elementNode.Children.Any() && e.Node.Nodes.Count == 1 && e.Node.Nodes[0].Name.Equals(VirtualNodeName))
+				{
+					AddChildrenToTree(e.Node, elementNode);
+				}
+
+				_expandedNodes.Add(GenerateTreeNodeFullPath(e.Node, treeview.PathSeparator));
+			}
 		}
 
 		private void ElementTree_Load(object sender, EventArgs e)
@@ -54,6 +77,10 @@ namespace Common.Controls
 		// desired, or icons might not be wanted, or only groups displayed, etc., etc.
 
 		public bool AllowDragging { get; set; }
+
+		public bool AllowPropertyEdit { get; set; }
+
+		public bool AllowWireExport { get; set; }
 
 
 		#endregion
@@ -93,7 +120,6 @@ namespace Common.Controls
 		private void _PopulateNodeTree(IEnumerable<string> elementTreeNodesToSelect = null)
 		{
 			// save metadata that is currently in the treeview
-			_expandedNodes = new HashSet<string>();
 			_selectedNodes = new HashSet<string>();
 			_topDisplayedNodes = new List<string>();
 
@@ -102,44 +128,32 @@ namespace Common.Controls
 
 			// clear the treeview, and repopulate it
 			treeview.BeginUpdate();
-			treeview.Nodes.Clear();
+			treeview.SelectedNode = null;
 			treeview.SelectedNodes.Clear();
+			treeview.Nodes.Clear();
 
-			foreach (ElementNode element in VixenSystem.Nodes.GetRootNodes()) {
-				AddNodeToTree(treeview.Nodes, element);
+			foreach (ElementNode element in VixenSystem.Nodes.GetRootNodes())
+			{
+				AddNodeToTree(treeview.Nodes, element, false);
 			}
 
 			// go through all the data we saved, and try to update the treeview to look
 			// like it used to (expanded nodes, selected nodes, node at the top)
 
-			foreach (string node in _expandedNodes) {
+			foreach (string node in _expandedNodes)
+			{
 				TreeNode resultNode = FindNodeInTreeAtPath(treeview, node);
-
-				if (resultNode != null) {
-					resultNode.Expand();
-				}
+				resultNode?.Expand();
 			}
 
 			// if a new element has been passed in to select, select it instead.
 			if (elementTreeNodesToSelect != null) {
 				_selectedNodes = new HashSet<string>(elementTreeNodesToSelect);
 			}
-			foreach (string node in _selectedNodes) {
-				TreeNode resultNode = FindNodeInTreeAtPath(treeview, node);
-
-				if (resultNode != null) {
-					treeview.AddSelectedNode(resultNode);
-					//ensure selected are visible
-					var parent = resultNode.Parent;
-					while (parent != null)
-					{
-						parent.Expand();
-						parent = parent.Parent;
-					}
-					
-				}
+			foreach (string node in _selectedNodes)
+			{
+				SelectNodeAtPath(node);
 			}
-
 
 			treeview.EndUpdate();
 
@@ -159,11 +173,39 @@ namespace Common.Controls
 			}
 
 			// finally, if we were selecting another element, make sure we raise the selection changed event
-			if (elementTreeNodesToSelect != null) {
+			if (elementTreeNodesToSelect != null)
+			{
 				// TODO: oops, we just pass the selection changed event through to the control; oh well,
 				// an "elements have changed" event will do for now. Fix this sometime.
 				OnElementsChanged();
 			}
+		}
+
+		private void SelectNodeAtPath(string nodePath)
+		{
+			var paths = nodePath.Split(treeview.PathSeparator.ToCharArray());
+			TreeNode resultNode = null;
+			for (int i = 1; i <= paths.Length; i++)
+			{
+				var path = string.Join(treeview.PathSeparator, paths, 0, i);
+				resultNode = FindNodeInTreeAtPath(treeview, path);
+				if (i != paths.Length)
+				{
+					resultNode?.Expand();
+				}
+			}
+
+			if (resultNode != null)
+			{
+				treeview.AddSelectedNode(resultNode);
+			}
+		}
+
+		public void SelectElementNode(ElementNode node)
+		{
+			ClearSelectedNodes();
+			var path = GenerateEquivalentTreeNodeFullPathFromElement(node, treeview.PathSeparator);
+			SelectNodeAtPath(path);
 		}
 
 		private string GenerateTreeNodeFullPath(TreeNode node, string separator)
@@ -218,10 +260,6 @@ namespace Common.Controls
 		private void SaveTreeNodeState(TreeNodeCollection collection)
 		{
 			foreach (TreeNode tn in collection) {
-				if (tn.IsExpanded) {
-					_expandedNodes.Add(GenerateTreeNodeFullPath(tn, treeview.PathSeparator));
-				}
-
 				if (treeview.SelectedNodes.Contains(tn)) {
 					_selectedNodes.Add(GenerateTreeNodeFullPath(tn, treeview.PathSeparator));
 				}
@@ -246,30 +284,94 @@ namespace Common.Controls
 			}
 		}
 
-		private void AddNodeToTree(TreeNodeCollection collection, ElementNode elementNode)
+		private TreeNode AddNodeToTree(TreeNodeCollection collection, ElementNode elementNode, bool addChildren = true)
 		{
 			TreeNode addedNode = new TreeNode();
 			addedNode.Name = elementNode.Id.ToString();
 			addedNode.Text = elementNode.Name;
 			addedNode.Tag = elementNode;
-
-			if (!elementNode.Children.Any()) {
-				if (elementNode.Element != null &&
-					VixenSystem.DataFlow.GetDestinationsOfComponent(VixenSystem.Elements.GetDataFlowComponentForElement(elementNode.Element)).Any()) {
-					if (elementNode.Element.Masked)
-						addedNode.ImageKey = addedNode.SelectedImageKey = "RedBall";
-					else
-						addedNode.ImageKey = addedNode.SelectedImageKey = "GreenBall";
-				} else
-					addedNode.ImageKey = addedNode.SelectedImageKey = "WhiteBall";
-			} else {
-				addedNode.ImageKey = addedNode.SelectedImageKey = "Group";
-			}
+			
+			UpdateTreeNodeImage(addedNode, elementNode);
 
 			collection.Add(addedNode);
 
-			foreach (ElementNode childNode in elementNode.Children) {
-				AddNodeToTree(addedNode.Nodes, childNode);
+			if(addChildren)
+			{
+				foreach (ElementNode childNode in elementNode.Children)
+				{
+					AddNodeToTree(addedNode.Nodes, childNode);
+				}
+			}
+			else if(elementNode.Children.Any())
+			{
+				TreeNode virtNode = new TreeNode();
+				virtNode.Name = VirtualNodeName;
+				addedNode.Nodes.Add(virtNode);
+			}
+
+			return addedNode;
+		}
+
+		private void AddChildrenToTree(TreeNode node, ElementNode elementNode)
+		{
+			node.Nodes.Clear();
+			var nodesToExpand = new List<TreeNode>();
+			foreach (ElementNode childNode in elementNode.Children)
+			{
+				var addedNode = AddNodeToTree(node.Nodes, childNode, false);
+				var path = GenerateTreeNodeFullPath(addedNode, treeview.PathSeparator);
+				if (_expandedNodes.Contains(path))
+				{
+					nodesToExpand.Add(addedNode);
+				}
+			}
+			nodesToExpand.ForEach(x => x.Expand());
+		}
+
+		public void RefreshElementTreeStatus()
+		{
+			treeview.BeginUpdate();
+			foreach (TreeNode node in treeview.Nodes)
+			{
+				RefreshElementTreeNode(node);
+			}
+
+			treeview.EndUpdate();
+		}
+
+		private void RefreshElementTreeNode(TreeNode node)
+		{
+			if (node.Tag is ElementNode elementNode)
+			{
+				UpdateTreeNodeImage(node, elementNode);
+
+				foreach (TreeNode childNode in node.Nodes)
+				{
+					RefreshElementTreeNode(childNode);
+				}
+			}
+		}
+
+		private static void UpdateTreeNodeImage(TreeNode node, ElementNode elementNode)
+		{
+			if (!elementNode.Children.Any())
+			{
+				if (elementNode.Element != null &&
+				    VixenSystem.DataFlow
+					    .GetDestinationsOfComponent(VixenSystem.Elements.GetDataFlowComponentForElement(elementNode.Element))
+					    .Any())
+				{
+					if (elementNode.Element.Masked)
+						node.ImageKey = node.SelectedImageKey = @"RedBall";
+					else
+						node.ImageKey = node.SelectedImageKey = @"GreenBall";
+				}
+				else
+					node.ImageKey = node.SelectedImageKey = @"WhiteBall";
+			}
+			else
+			{
+				node.ImageKey = node.SelectedImageKey = @"Group";
 			}
 		}
 
@@ -510,7 +612,7 @@ namespace Common.Controls
 						result.AddRange(
 							nameGenerator.Names.Where(name => !string.IsNullOrEmpty(name)).Select(
 								name => AddNewNode(name, false, parent, true)));
-						if (result == null || result.Count() == 0)
+						if (!result.Any())
 						{
 							//messageBox Arguments are (Text, Title, No Button Visible, Cancel Button Visible)
 							MessageBoxForm.msgIcon = SystemIcons.Error; //this is used if you want to add a system icon to the message form.
@@ -519,7 +621,7 @@ namespace Common.Controls
 							messageBox.ShowDialog();
 							return result;
 						}
-						PopulateNodeTree(result.FirstOrDefault());
+						AddNodePathToTree(result);
 					}
 				}
 
@@ -537,7 +639,8 @@ namespace Common.Controls
 					else
 						newName = textDialog.Response;
 
-					ElementNode en = AddNewNode(newName, true, parent);
+					ElementNode en = AddNewNode(newName, false, parent);
+					AddNodePathToTree(new []{en});
 					return en;
 				}
 			}
@@ -557,6 +660,47 @@ namespace Common.Controls
 			if (repopulateNodeTree)
 				PopulateNodeTree(newNode);
 			return newNode;
+		}
+
+		public void AddNodePathToTree(IEnumerable<ElementNode> elementNodes)
+		{
+			_selectedNodes.Clear();
+			
+			treeview.BeginUpdate();
+			ClearSelectedNodes();
+			TreeNode resultNode = null;
+			foreach (var elementNode in elementNodes)
+			{
+				if (elementNode.Parents.Any(x => x.Name!=@"Root"))
+				{
+					foreach (var nodeParent in elementNode.Parents)
+					{
+						var parentTreeNode = FindNodeInTreeAtPath(treeview, GenerateEquivalentTreeNodeFullPathFromElement(nodeParent, treeview.PathSeparator));
+						if (parentTreeNode != null)
+						{
+							parentTreeNode.Nodes.Clear();
+							AddChildrenToTree(parentTreeNode, nodeParent);
+							_expandedNodes.Add(GenerateTreeNodeFullPath(parentTreeNode, treeview.PathSeparator));
+							resultNode = FindNodeInTreeAtPath(treeview, GenerateEquivalentTreeNodeFullPathFromElement(elementNode, treeview.PathSeparator));
+							_selectedNodes.Add(GenerateEquivalentTreeNodeFullPathFromElement(elementNode, treeview.PathSeparator));
+							parentTreeNode.Expand();
+						}
+					}
+				}
+				else
+				{
+					resultNode = AddNodeToTree(treeview.Nodes, elementNode, false);
+					_selectedNodes.Add(GenerateEquivalentTreeNodeFullPathFromElement(elementNode, treeview.PathSeparator));
+				}
+				
+				if (resultNode != null)
+				{
+					treeview.AddSelectedNode(resultNode);
+				}
+			}
+			
+			treeview.EndUpdate();
+			resultNode?.EnsureVisible();
 		}
 
 		public bool CreateGroupFromSelectedNodes()
@@ -682,6 +826,7 @@ namespace Common.Controls
 			copyNodesToolStripMenuItem.Enabled = (SelectedTreeNodes.Count > 0);
 			pasteNodesToolStripMenuItem.Enabled = (_clipboardNodes != null);
 			pasteAsNewToolStripMenuItem.Enabled = (_clipboardNodes != null);
+			nodePropertiesToolStripMenuItem.Visible = AllowPropertyEdit;
 			copyPropertiesToolStripMenuItem.Enabled = (SelectedTreeNodes.Count == 1);
 			pastePropertiesToolStripMenuItem.Enabled = (SelectedTreeNodes.Count > 0) && (_clipboardProperties != null);
 			nodePropertiesToolStripMenuItem.Enabled = (SelectedTreeNodes.Count > 0);
@@ -692,20 +837,25 @@ namespace Common.Controls
 			patternRenameToolStripMenuItem.Enabled = (SelectedTreeNodes.Count > 0);
 			reverseElementsToolStripMenuItem.Enabled = (SelectedTreeNodes.Count > 1) && (treeview.CanReverseElements());
 			sortToolStripMenuItem.Enabled = CanSortSelected();
+			exportWireDiagramToolStripMenuItem.Visible = AllowWireExport;
 			exportWireDiagramToolStripMenuItem.Enabled = CanExportDiagram();
+			exportElementTreeToolStripMenuItem.Enabled = treeview.Nodes.Count > 0;
 		}
 
 		private bool CanExportDiagram()
 		{
 			var canExport = false;
-			if (SelectedTreeNodes.Count == 1)
+			if (AllowWireExport)
 			{
-				if (SelectedTreeNodes.Any(x => x.GetNodeCount(true) > 1))
+				if (SelectedTreeNodes.Count == 1)
 				{
-					canExport = true;
+					if (SelectedElementNodes.Any(x => x.Children.Any()))
+					{
+						canExport = true;
+					}
 				}
 			}
-
+			
 			return canExport;
 		}
 
@@ -945,7 +1095,6 @@ namespace Common.Controls
 		private void renameNodesToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			if (RenameSelectedElements()) {
-				PopulateNodeTree();
 				OnElementsChanged();
 			}
 		}
@@ -980,6 +1129,22 @@ namespace Common.Controls
 		private void exportWireDiagramToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			ExportDiagram?.Invoke(SelectedElementNodes.FirstOrDefault());
+		}
+
+		private async void ExportElementTreeToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			using (var saveFileDialog = new SaveFileDialog())
+			{
+				saveFileDialog.OverwritePrompt = true;
+				saveFileDialog.DefaultExt = ".v3m";
+				saveFileDialog.Filter = @"Vixen 3 Element Nodes (*.v3e)|*.v3e";
+				saveFileDialog.InitialDirectory = SequenceService.SequenceDirectory;
+				var result = saveFileDialog.ShowDialog(Parent);
+				if (result == DialogResult.OK)
+				{
+					VixenSystem.Nodes.ExportElementNodeProxy(saveFileDialog.FileName);
+				}
+			}
 		}
 
 		private bool CanSortSelected()

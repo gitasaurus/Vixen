@@ -19,7 +19,7 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
     // class via a tool like ResGen or Visual Studio.
     // To add or remove a member, edit your .ResX file then rerun ResGen
     // with the /str option, or rebuild your VS project.
-    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "15.0.0.0")]
+    [global::System.CodeDom.Compiler.GeneratedCodeAttribute("System.Resources.Tools.StronglyTypedResourceBuilder", "16.0.0.0")]
     [global::System.Diagnostics.DebuggerNonUserCodeAttribute()]
     [global::System.Runtime.CompilerServices.CompilerGeneratedAttribute()]
     internal class EffectDescriptionDescriptors {
@@ -80,6 +80,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Determines the height of the waveform..
+        /// </summary>
+        internal static string Amplitude {
+            get {
+                return ResourceManager.GetString("Amplitude", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Controls the rotation angle..
         /// </summary>
         internal static string Angle {
@@ -103,6 +112,33 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string AngleSpeedVariation {
             get {
                 return ResourceManager.GetString("AngleSpeedVariation", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This option animates the position of the emitter within the display area..
+        /// </summary>
+        internal static string Animate {
+            get {
+                return ResourceManager.GetString("Animate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the X starting position of the animated emitter..
+        /// </summary>
+        internal static string AnimateXStart {
+            get {
+                return ResourceManager.GetString("AnimateXStart", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the Y starting position of the animated emitter..
+        /// </summary>
+        internal static string AnimateYStart {
+            get {
+                return ResourceManager.GetString("AnimateYStart", resourceCulture);
             }
         }
         
@@ -296,6 +332,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Creates a barrier at the bottom of the display area.  This barrier prevents liquid particles the falling out of the display area..
+        /// </summary>
+        internal static string BottomBarrier {
+            get {
+                return ResourceManager.GetString("BottomBarrier", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Adjust the Bottom Border Width..
         /// </summary>
         internal static string BottomBorderWidth {
@@ -404,6 +449,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Determines how the Chase is applied across the target elements that are presented to the effect..
+        /// </summary>
+        internal static string ChaseTargetNodeSelection {
+            get {
+                return ResourceManager.GetString("ChaseTargetNodeSelection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Select from a list of Christmas shapes..
         /// </summary>
         internal static string ChristmasShapes {
@@ -472,6 +526,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string ColorHandling {
             get {
                 return ResourceManager.GetString("ColorHandling", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Defines the list of colors that are cycled through for an emitter when the Use Color List option is selected for an emitter..
+        /// </summary>
+        internal static string ColorList {
+            get {
+                return ResourceManager.GetString("ColorList", resourceCulture);
             }
         }
         
@@ -566,6 +629,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Cycles through colors for each character..
+        /// </summary>
+        internal static string CycleCharacterColor {
+            get {
+                return ResourceManager.GetString("CycleCharacterColor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Will cycle through gradient colors for each word..
         /// </summary>
         internal static string CycleColor {
@@ -607,6 +679,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string Depth {
             get {
                 return ResourceManager.GetString("Depth", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This setting helps fill in empty (speck) pixels in the effect by filling them in with the average color of the surrounding pixels if the number of surrounding empty (black) pixels is less than the threshold..
+        /// </summary>
+        internal static string DespeckleThreshold {
+            get {
+                return ResourceManager.GetString("DespeckleThreshold", resourceCulture);
             }
         }
         
@@ -665,11 +746,65 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This option controls how the emitters behave when they reach the edge of the display area.  Bounce setting causes the emitter to bounce off the edge of the display area.  Wrap setting causes the emitter to wrap around from the other side of the display area..
+        /// </summary>
+        internal static string EdgeHandling {
+            get {
+                return ResourceManager.GetString("EdgeHandling", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Controls the type of movement..
         /// </summary>
         internal static string EffectType {
             get {
                 return ResourceManager.GetString("EffectType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the brightness of the emitter&apos;s liquid particles..
+        /// </summary>
+        internal static string EmitterBrightness {
+            get {
+                return ResourceManager.GetString("EmitterBrightness", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Selects the Mark Collection to use to determine when the emitter is emitting (On)..
+        /// </summary>
+        internal static string EmitterMarkCollection {
+            get {
+                return ResourceManager.GetString("EmitterMarkCollection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the number of milliseconds the emitter is off in 50ms increments..
+        /// </summary>
+        internal static string EmitterOffTime {
+            get {
+                return ResourceManager.GetString("EmitterOffTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the number of milliseconds the emitter is emitting in 50 ms increments..
+        /// </summary>
+        internal static string EmitterOnTime {
+            get {
+                return ResourceManager.GetString("EmitterOnTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to This list defines the emitters in the effect.  Emitters can be added or removed via buttons at the bottom of the list..
+        /// </summary>
+        internal static string Emitters {
+            get {
+                return ResourceManager.GetString("Emitters", resourceCulture);
             }
         }
         
@@ -688,6 +823,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string EnableMinimumBrightness {
             get {
                 return ResourceManager.GetString("EnableMinimumBrightness", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Adjust the Charater position from center point..
+        /// </summary>
+        internal static string ExplodePosition {
+            get {
+                return ResourceManager.GetString("ExplodePosition", resourceCulture);
             }
         }
         
@@ -724,6 +868,33 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string EyeMode {
             get {
                 return ResourceManager.GetString("EyeMode", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Type of Fade applied to each Snowflake..
+        /// </summary>
+        internal static string Fade {
+            get {
+                return ResourceManager.GetString("Fade", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Adjusts the Fade speed of each Snowflake over the length o fthe effect..
+        /// </summary>
+        internal static string FadeSpeed {
+            get {
+                return ResourceManager.GetString("FadeSpeed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Adjusts the speed of the falling characters..
+        /// </summary>
+        internal static string FallSpeed {
+            get {
+                return ResourceManager.GetString("FallSpeed", resourceCulture);
             }
         }
         
@@ -836,6 +1007,24 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Controls the rate of particles emitted by the emitter..
+        /// </summary>
+        internal static string Flow {
+            get {
+                return ResourceManager.GetString("Flow", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the continuity of the liquid flow (Continuous, Pulsating, Use Marks, Musical)..
+        /// </summary>
+        internal static string FlowControl {
+            get {
+                return ResourceManager.GetString("FlowControl", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to The text font..
         /// </summary>
         internal static string Font {
@@ -854,11 +1043,29 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Determines how many frames of particles are created for each color in the list..
+        /// </summary>
+        internal static string FramesPerColor {
+            get {
+                return ResourceManager.GetString("FramesPerColor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Controls the frames per second rate..
         /// </summary>
         internal static string FramesPerSecond {
             get {
                 return ResourceManager.GetString("FramesPerSecond", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines how many times the waveform repeats on the display element..
+        /// </summary>
+        internal static string Frequency {
+            get {
+                return ResourceManager.GetString("Frequency", resourceCulture);
             }
         }
         
@@ -962,6 +1169,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Adjust the number of Horizontal Snowflakes..
+        /// </summary>
+        internal static string HFlakeCount {
+            get {
+                return ResourceManager.GetString("HFlakeCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Controls whether there are highlights added..
         /// </summary>
         internal static string Highlight {
@@ -1039,6 +1255,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string Iterations {
             get {
                 return ResourceManager.GetString("Iterations", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Creates a barrier at the left side of the display area.  This barrier prevents liquid particles from leaving the left side of the display area..
+        /// </summary>
+        internal static string LeftBarrier {
+            get {
+                return ResourceManager.GetString("LeftBarrier", resourceCulture);
             }
         }
         
@@ -1232,6 +1457,24 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Mirrors the waveform across an imaginary y-axis..
+        /// </summary>
+        internal static string Mirror {
+            get {
+                return ResourceManager.GetString("Mirror", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to When selected liquid particles of different colors will combine colors when the particles collide or come into contact with each other..
+        /// </summary>
+        internal static string MixColors {
+            get {
+                return ResourceManager.GetString("MixColors", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Controls shape movement..
         /// </summary>
         internal static string Mode {
@@ -1277,6 +1520,42 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Controls the angle of the emitter&apos;s nozzle.  The angle is more discernible at lower flow rates..
+        /// </summary>
+        internal static string NozzleAngle {
+            get {
+                return ResourceManager.GetString("NozzleAngle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the movement of the emitter&apos;s nozzle (Fixed Angle, Oscillate, Spin Clockwise, Spin Counter Clockwise).
+        /// </summary>
+        internal static string NozzleMovement {
+            get {
+                return ResourceManager.GetString("NozzleMovement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the size of the area the particles are released from the emitter..
+        /// </summary>
+        internal static string NozzleSize {
+            get {
+                return ResourceManager.GetString("NozzleSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the emitter&apos;s nozzle rotation speed..
+        /// </summary>
+        internal static string NozzleSpeed {
+            get {
+                return ResourceManager.GetString("NozzleSpeed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to When enabled will convert the Offsets to percentage of Buffer size. Once enabled the option will be hidden as this is the updated method..
         /// </summary>
         internal static string OffsetPercentage {
@@ -1304,6 +1583,33 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to This option repeatedly oscillates the emitter&apos;s nozzle from a start angle to an end angle and then back to the starting position..
+        /// </summary>
+        internal static string Oscillate {
+            get {
+                return ResourceManager.GetString("Oscillate", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Defines the end angle of the oscillation. This is the point where the nozzle will reverse the direction of rotation..
+        /// </summary>
+        internal static string OscillateEndAngle {
+            get {
+                return ResourceManager.GetString("OscillateEndAngle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Defines the starting angle of the oscillation..
+        /// </summary>
+        internal static string OscillateStartAngle {
+            get {
+                return ResourceManager.GetString("OscillateStartAngle", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Adjusts the Outer border start location..
         /// </summary>
         internal static string OuterBorderStarts {
@@ -1322,11 +1628,29 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Determines the color of the emitter&apos;s liquid particles..
+        /// </summary>
+        internal static string ParticleColor {
+            get {
+                return ResourceManager.GetString("ParticleColor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Controls how fast the particles fade..
         /// </summary>
         internal static string ParticleFade {
             get {
                 return ResourceManager.GetString("ParticleFade", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines how long the emitter&apos;s particles exist..
+        /// </summary>
+        internal static string ParticleLifetime {
+            get {
+                return ResourceManager.GetString("ParticleLifetime", resourceCulture);
             }
         }
         
@@ -1340,11 +1664,47 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Defines the radius of all particles in the effect..
+        /// </summary>
+        internal static string ParticleSize {
+            get {
+                return ResourceManager.GetString("ParticleSize", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the type of particle created by the emitter.  The differences between the types is subtle.  Powder is one type that produces a different behavior that is visually discernible..
+        /// </summary>
+        internal static string ParticleType {
+            get {
+                return ResourceManager.GetString("ParticleType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the speed of the particles emitting from the emitter..
+        /// </summary>
+        internal static string ParticleVelocity {
+            get {
+                return ResourceManager.GetString("ParticleVelocity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Enabled will adjust movement per number where as disabled adjusts movement over effect length..
         /// </summary>
         internal static string PerIteration {
             get {
                 return ResourceManager.GetString("PerIteration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines how far the waveform is shifted horizontally from the usual position.  The phase shift is adjustable from zero to 180 degrees..
+        /// </summary>
+        internal static string PhaseShift {
+            get {
+                return ResourceManager.GetString("PhaseShift", resourceCulture);
             }
         }
         
@@ -1381,6 +1741,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string Position {
             get {
                 return ResourceManager.GetString("Position", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to By default the wave grows across the display element.  This setting primes the waveform such that it fills the entire display element at the start of the effect..
+        /// </summary>
+        internal static string PrimeWave {
+            get {
+                return ResourceManager.GetString("PrimeWave", resourceCulture);
             }
         }
         
@@ -1502,6 +1871,24 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Changes the Max time used to determine when the Ball direction is change..
+        /// </summary>
+        internal static string RandomMaxCurve {
+            get {
+                return ResourceManager.GetString("RandomMaxCurve", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Randomly changes the ball direction at random times..
+        /// </summary>
+        internal static string RandomMovement {
+            get {
+                return ResourceManager.GetString("RandomMovement", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Creates new Meteors at a Random Position.
         /// </summary>
         internal static string RandomPosition {
@@ -1543,6 +1930,24 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string RandomSpeed {
             get {
                 return ResourceManager.GetString("RandomSpeed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls whether the animated emitter start position is random..
+        /// </summary>
+        internal static string RandomStartingPosition {
+            get {
+                return ResourceManager.GetString("RandomStartingPosition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the factor used to scale the liquid matrix to the sparse matrix formed by the selected elements..
+        /// </summary>
+        internal static string RenderScaleFactor {
+            get {
+                return ResourceManager.GetString("RenderScaleFactor", resourceCulture);
             }
         }
         
@@ -1606,6 +2011,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string RevolutionTime {
             get {
                 return ResourceManager.GetString("RevolutionTime", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Creates a barrier at the right side of the display area.  This barrier prevents liquid particles from leaving the right side of the display area..
+        /// </summary>
+        internal static string RightBarrier {
+            get {
+                return ResourceManager.GetString("RightBarrier", resourceCulture);
             }
         }
         
@@ -1826,6 +2240,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Determines the length of the snake. .
+        /// </summary>
+        internal static string SnakeLength {
+            get {
+                return ResourceManager.GetString("SnakeLength", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Allows the Snowflakes to build-up at the bottom of the Element..
         /// </summary>
         internal static string SnowBuildUp {
@@ -1858,6 +2281,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         internal static string SpinSpeedFormat {
             get {
                 return ResourceManager.GetString("SpinSpeedFormat", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines how the Spin is applied across the target elements that are presented to the effect..
+        /// </summary>
+        internal static string SpinTargetNodeSelection {
+            get {
+                return ResourceManager.GetString("SpinTargetNodeSelection", resourceCulture);
             }
         }
         
@@ -2096,6 +2528,15 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Creates a barrier at the top of the display area.  This barrier prevents the liquid particles from leaving the top of the display area..
+        /// </summary>
+        internal static string TopBarrier {
+            get {
+                return ResourceManager.GetString("TopBarrier", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Adjust the Top Border Width..
         /// </summary>
         internal static string TopBorderWidth {
@@ -2168,11 +2609,47 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to When selected this option controls the color of the particles created by the emitter.  The particles will cycle through the colors in the list for a configurable number of frames..
+        /// </summary>
+        internal static string UseColorList {
+            get {
+                return ResourceManager.GetString("UseColorList", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Enables the Mark Collection Name drop down to select a mark collection to determine when the Decaying Sine will bounce back to the normal amplitude..
+        /// </summary>
+        internal static string UseMarks {
+            get {
+                return ResourceManager.GetString("UseMarks", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Controls the velocity of the particles..
         /// </summary>
         internal static string Velocity {
             get {
                 return ResourceManager.GetString("Velocity", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the speed of the emitter in the X axis when animated..
+        /// </summary>
+        internal static string VelocityX {
+            get {
+                return ResourceManager.GetString("VelocityX", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls the speed of the emitter in the Y axis when animated..
+        /// </summary>
+        internal static string VelocityY {
+            get {
+                return ResourceManager.GetString("VelocityY", resourceCulture);
             }
         }
         
@@ -2195,11 +2672,110 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
+        ///   Looks up a localized string similar to Adjust the number of Vertical Snowflakes..
+        /// </summary>
+        internal static string VFlakeCount {
+            get {
+                return ResourceManager.GetString("VFlakeCount", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Runs the Liquid engine for the specified number of frames before rendering the effect.  This setting is useful if you want a large number of particles in the display area at the beginning of the effect..
+        /// </summary>
+        internal static string WarmUpFrames {
+            get {
+                return ResourceManager.GetString("WarmUpFrames", resourceCulture);
+            }
+        }
+        
+        /// <summary>
         ///   Looks up a localized string similar to Controls how the wave accelerates out from the center over time. .
         /// </summary>
         internal static string WaveAcceleration {
             get {
                 return ResourceManager.GetString("WaveAcceleration", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the color of the wave over the duration of the effect..
+        /// </summary>
+        internal static string WaveColor {
+            get {
+                return ResourceManager.GetString("WaveColor", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Controls how the color gradient is applied to the wave..
+        /// </summary>
+        internal static string WaveColorHandling {
+            get {
+                return ResourceManager.GetString("WaveColorHandling", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the direction of the waveform.  This setting allows for multiple waveforms to move in opposing directions..
+        /// </summary>
+        internal static string WaveDirection {
+            get {
+                return ResourceManager.GetString("WaveDirection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Mark collection used to determine when the amplitude bounces back..
+        /// </summary>
+        internal static string WaveMarkCollection {
+            get {
+                return ResourceManager.GetString("WaveMarkCollection", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the movement of the waveform..
+        /// </summary>
+        internal static string WaveMovementType {
+            get {
+                return ResourceManager.GetString("WaveMovementType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines how fast the waveform moves.  The speed determines how many columns of the waveform are rendered each frame.  This setting is in columns (or pixels) where each 10 units in the curve editor equals 1 column..
+        /// </summary>
+        internal static string WaveSpeed {
+            get {
+                return ResourceManager.GetString("WaveSpeed", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the vertical thickness of the waveform..
+        /// </summary>
+        internal static string WaveThickness {
+            get {
+                return ResourceManager.GetString("WaveThickness", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Determines the type of of waveform..
+        /// </summary>
+        internal static string WaveType {
+            get {
+                return ResourceManager.GetString("WaveType", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Moves the waveform up or down in the display element..
+        /// </summary>
+        internal static string WaveYOffset {
+            get {
+                return ResourceManager.GetString("WaveYOffset", resourceCulture);
             }
         }
         
@@ -2267,7 +2843,16 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Horizontal Center Speed.
+        ///   Looks up a localized string similar to Controls the position of the emitter on the display area in the X axis..
+        /// </summary>
+        internal static string XPosition {
+            get {
+                return ResourceManager.GetString("XPosition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Horizontal Center Speed..
         /// </summary>
         internal static string XSpeed {
             get {
@@ -2294,7 +2879,16 @@ namespace VixenModules.EffectEditor.EffectDescriptorAttributes {
         }
         
         /// <summary>
-        ///   Looks up a localized string similar to Horizontal Center Speed.
+        ///   Looks up a localized string similar to Controls the position of the emitter on the display area in the Y axis..
+        /// </summary>
+        internal static string YPosition {
+            get {
+                return ResourceManager.GetString("YPosition", resourceCulture);
+            }
+        }
+        
+        /// <summary>
+        ///   Looks up a localized string similar to Horizontal Center Speed..
         /// </summary>
         internal static string YSpeed {
             get {

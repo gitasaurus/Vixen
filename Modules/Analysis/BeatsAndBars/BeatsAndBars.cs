@@ -5,7 +5,6 @@ using System.Collections.ObjectModel;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
-using Common.WPFCommon.Utils;
 using QMLibrary;
 using Vixen.Extensions;
 using Vixen.Marks;
@@ -38,7 +37,6 @@ namespace VixenModules.Analysis.BeatsAndBars
 
 		private IDictionary<int, ICollection<ManagedFeature>> GenerateFeatures(ManagedPlugin plugin, float[] fSampleData, bool showProgress = true)
 		{
-			int i = 0;
 			int j = 0;
 			IDictionary<int, ICollection<ManagedFeature>> retVal = 
 				new ConcurrentDictionary<int, ICollection<ManagedFeature>>();

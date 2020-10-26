@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
+using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using Common.Controls.ColorManagement.ColorModels;
@@ -283,17 +284,10 @@ namespace VixenModules.Effect.Bars
 
 		protected override void RenderEffect(int frame, IPixelFrameBuffer frameBuffer)
 		{
-			var buffer = frameBuffer as PixelLocationFrameBuffer;
-			if (buffer != null)
-			{
-				RenderEffectByLocation(frame, buffer);
-			}
-			
 			int x, y, n, colorIdx;
 			int colorcnt = Colors.Count();
 			int barCount = Repeat * colorcnt;
 			double intervalPosFactor = GetEffectTimeIntervalPosition(frame) * 100;
-
 			_negPosition = false;
 
 			if (MovementType == MovementType.Iterations)
@@ -302,39 +296,44 @@ namespace VixenModules.Effect.Bars
 			}
 			else
 			{
-				if (frame == 0) _position = CalculateSpeed(intervalPosFactor);
-				_position += CalculateSpeed(intervalPosFactor) / 100;
-				if (_position < 0)
-				{
-					_negPosition = true;
-					_position = -_position;
-				}
+				var s = CalculateSpeed(intervalPosFactor);
+				if (frame == 0) _position = s;
+				var adj = s / 100 * FrameTime / 50d;
+				_position += adj; //Adjust the speed setting for different frame rates with FrameTime / 50d
+				//Debug.WriteLine($"S:{s}, PosFactor:{intervalPosFactor}, Frame:{frame}, FrameTime:{FrameTime}, Position:{_position}, Adj:{adj}");
+				_negPosition = _position < 0;
 			}
+
+			var workingPosition = Math.Abs(_position);
 
 			if (barCount < 1) barCount = 1;
 			double level = LevelCurve.GetValue(intervalPosFactor) / 100;
+			var bufferHt = BufferHt;
+			var bufferWi = BufferWi;
 
 			if (Direction < BarDirection.Left || Direction == BarDirection.AlternateUp || Direction == BarDirection.AlternateDown)
 			{
-				int barHt = BufferHt / barCount+1;
+				int barHt = bufferHt / barCount+1;
 				if (barHt < 1) barHt = 1;
-				int halfHt = BufferHt / 2;
+				int halfHt = bufferHt / 2;
 				int blockHt = colorcnt * barHt;
 				if (blockHt < 1) blockHt = 1;
-				int fOffset = (int) (_position*blockHt*Repeat);// : Speed * frame / 4 % blockHt);
+				int fOffset = (int) (workingPosition*blockHt*Repeat);// : Speed * frame / 4 % blockHt);
 				if(Direction == BarDirection.AlternateUp || Direction == BarDirection.AlternateDown)
 				{
-					fOffset = (int)(Math.Floor(_position*barCount)*barHt);
+					fOffset = (int)(Math.Floor(workingPosition*barCount)*barHt);
 				}
-				int indexAdjust = 1;
+
+				var indexAdjust = 1;
 				
-				for (y = 0; y < BufferHt; y++)
+				for (y = 0; y < bufferHt; y++)
 				{
 					n = y + fOffset;
 					colorIdx = ((n + indexAdjust) % blockHt) / barHt;
 					//we need the integer division here to make things work
-					float colorPosition = ((n + indexAdjust) / barHt) - ((n + indexAdjust) / barHt);
+					double colorPosition = (n + indexAdjust) % barHt / (double)barHt;
 					Color c = Colors[colorIdx].GetColorAt(colorPosition);
+					
 					if (Highlight || Show3D)
 					{
 						var hsv = HSV.FromRGB(c);
@@ -360,30 +359,30 @@ namespace VixenModules.Effect.Bars
 							// dow
 							if (_negPosition)
 							{
-								for (x = 0; x < BufferWi; x++)
+								for (x = 0; x < bufferWi; x++)
 								{
-									frameBuffer.SetPixel(x, BufferHt - y - 1, c);
+									frameBuffer.SetPixel(x, bufferHt - y - 1, c);
 								}
 							}
 							else
 							{
-								for (x = 0; x < BufferWi; x++)
+								for (x = 0; x < bufferWi; x++)
 								{
 									frameBuffer.SetPixel(x, y, c);
 								}
 							}
 
 							break;
-						case BarDirection.Expand:
+						case BarDirection.Compress:
 							// expand
 							if (_negPosition)
 							{
 								if (y <= halfHt)
 								{
-									for (x = 0; x < BufferWi; x++)
+									for (x = 0; x < bufferWi; x++)
 									{
 										frameBuffer.SetPixel(x, y, c);
-										frameBuffer.SetPixel(x, BufferHt - y - 1, c);
+										frameBuffer.SetPixel(x, bufferHt - y - 1, c);
 									}
 								}
 							}
@@ -391,24 +390,24 @@ namespace VixenModules.Effect.Bars
 							{
 								if (y >= halfHt)
 								{
-									for (x = 0; x < BufferWi; x++)
+									for (x = 0; x < bufferWi; x++)
 									{
 										frameBuffer.SetPixel(x, y, c);
-										frameBuffer.SetPixel(x, BufferHt - y - 1, c);
+										frameBuffer.SetPixel(x, bufferHt - y - 1, c);
 									}
 								}
 							}
 							break;
-						case BarDirection.Compress:
+						case BarDirection.Expand:
 							// compress
 							if (!_negPosition)
 							{
 								if (y <= halfHt)
 								{
-									for (x = 0; x < BufferWi; x++)
+									for (x = 0; x < bufferWi; x++)
 									{
 										frameBuffer.SetPixel(x, y, c);
-										frameBuffer.SetPixel(x, BufferHt - y - 1, c);
+										frameBuffer.SetPixel(x, bufferHt - y - 1, c);
 									}
 								}
 							}
@@ -416,10 +415,10 @@ namespace VixenModules.Effect.Bars
 							{
 								if (y >= halfHt)
 								{
-									for (x = 0; x < BufferWi; x++)
+									for (x = 0; x < bufferWi; x++)
 									{
 										frameBuffer.SetPixel(x, y, c);
-										frameBuffer.SetPixel(x, BufferHt - y - 1, c);
+										frameBuffer.SetPixel(x, bufferHt - y - 1, c);
 									}
 								}
 							}
@@ -428,14 +427,14 @@ namespace VixenModules.Effect.Bars
 							// up & AlternateUp
 							if (!_negPosition)
 							{
-								for (x = 0; x < BufferWi; x++)
+								for (x = 0; x < bufferWi; x++)
 								{
-									frameBuffer.SetPixel(x, BufferHt - y - 1, c);
+									frameBuffer.SetPixel(x, bufferHt - y - 1, c);
 								}
 							}
 							else
 							{
-								for (x = 0; x < BufferWi; x++)
+								for (x = 0; x < bufferWi; x++)
 								{
 									frameBuffer.SetPixel(x, y, c);
 								}
@@ -446,28 +445,29 @@ namespace VixenModules.Effect.Bars
 			}
 			else
 			{
-				int barWi = BufferWi / barCount+1;
+				int barWi = bufferWi / barCount+1;
 				if (barWi < 1) barWi = 1;
-				int halfWi = BufferWi / 2;
+				int halfWi = bufferWi / 2;
 				int blockWi = colorcnt * barWi;
 				if (blockWi < 1) blockWi = 1;
-				int fOffset = (int)(_position * blockWi * Repeat);
+				int fOffset = (int)(workingPosition * blockWi * Repeat);
 				if (Direction > BarDirection.AlternateDown)
 				{
-					fOffset = (int)(Math.Floor(_position * barCount) * barWi);
+					fOffset = (int)(Math.Floor(workingPosition * barCount) * barWi);
 				} 
 				
-				for (x = 0; x < BufferWi; x++)
+				for (x = 0; x < bufferWi; x++)
 				{
 					n = x + fOffset;
-					colorIdx = ((n + 1) % blockWi) / barWi;
 					//we need the integer division here to make things work
-					float colorPosition = ((n + 1) / barWi) - ((n + 1) / barWi);
+					colorIdx = ((n + 1) % blockWi) / barWi;
+					var colorPosition = (n + 1) % barWi / (double)barWi;
 					Color c = Colors[colorIdx].GetColorAt( colorPosition );
+					
 					if (Highlight || Show3D)
 					{
 						var hsv = HSV.FromRGB(c);
-						if (Highlight && n % barWi == 0) hsv.S = 0.0f;
+						if (Highlight && (n+1) % barWi == 0) hsv.S = 0.0f;
 						if (Show3D) hsv.V *= (float)(barWi - n % barWi - 1) / barWi;
 						hsv.V *= level;
 						c = hsv.ToRGB();
@@ -487,38 +487,38 @@ namespace VixenModules.Effect.Bars
 						case BarDirection.Right:
 						case BarDirection.AlternateRight:
 							// right
-							for (y = 0; y < BufferHt; y++)
+							for (y = 0; y < bufferHt; y++)
 							{
-								frameBuffer.SetPixel(BufferWi - x - 1, y, c);
+								frameBuffer.SetPixel(_negPosition?x:bufferWi - x - 1, y, c);
 							}
 							break;
 						case BarDirection.HExpand:
 							// H-expand
-							if (x <= halfWi)
+							if (!_negPosition && x <= halfWi || _negPosition && x >= halfWi)
 							{
-								for (y = 0; y < BufferHt; y++)
+								for (y = 0; y < bufferHt; y++)
 								{
 									frameBuffer.SetPixel(x, y, c);
-									frameBuffer.SetPixel(BufferWi - x - 1, y, c);
+									frameBuffer.SetPixel(bufferWi - x - 1, y, c);
 								}
 							}
 							break;
 						case BarDirection.HCompress:
 							// H-compress
-							if (x >= halfWi)
+							if (!_negPosition && x >= halfWi || _negPosition && x <= halfWi)
 							{
-								for (y = 0; y < BufferHt; y++)
+								for (y = 0; y < bufferHt; y++)
 								{
 									frameBuffer.SetPixel(x, y, c);
-									frameBuffer.SetPixel(BufferWi - x - 1, y, c);
+									frameBuffer.SetPixel(bufferWi - x - 1, y, c);
 								}
 							}
 							break;
 						default:
 							// left & AlternateLeft
-							for (y = 0; y < BufferHt; y++)
+							for (y = 0; y < bufferHt; y++)
 							{
-								frameBuffer.SetPixel(x, y, c);
+								frameBuffer.SetPixel(_negPosition?bufferWi - x - 1:x, y, c);
 							}
 							break;
 					}
@@ -541,6 +541,11 @@ namespace VixenModules.Effect.Bars
 			if (barWi < 1) barWi = 1;
 			int blockWi = colorcnt * barWi;
 			if (blockWi < 1) blockWi = 1;
+
+			var bufferHt = BufferHt;
+			var bufferWi = BufferWi;
+			var bufferHtOffset = BufferHtOffset;
+			var bufferWiOffset = BufferWiOffset;
 
 			IEnumerable<IGrouping<int, ElementLocation>> nodes;
 			List<IGrouping<int, ElementLocation>> reversedNodes = new List<IGrouping<int, ElementLocation>>();
@@ -577,6 +582,7 @@ namespace VixenModules.Effect.Bars
 			var nodeCount = nodes.Count();
 			var halfNodeCount = (nodeCount - 1) / 2;
 			var evenHalfCount = nodeCount%2!=0;
+			_negPosition = false;
 			for (int frame = 0; frame < numFrames; frame++)
 			{
 				frameBuffer.CurrentFrame = frame;
@@ -588,44 +594,57 @@ namespace VixenModules.Effect.Bars
 					_position = (GetEffectTimeIntervalPosition(frame) * Speed) % 1;
 				}
 				else
-				{
-					if (frame == 0) _position = CalculateSpeed(intervalPosFactor);
-					_position += CalculateSpeed(intervalPosFactor) / 100;
+				{   
+					var s = CalculateSpeed(intervalPosFactor);
+					if (frame == 0) _position = s;
+					_position += s / 100 * FrameTime / 50d; //Adjust the speed setting for different frame rates with FrameTime / 50d
+					_negPosition = _position < 0;
 				}
+
+				
+				var workingPosition = Math.Abs(_position);
 
 				int n;
 				int colorIdx;
 				if (Direction < BarDirection.Left || Direction == BarDirection.AlternateUp || Direction == BarDirection.AlternateDown)
 				{
 					
-					int fOffset = (int)(_position * blockHt * Repeat);// : Speed * frame / 4 % blockHt);
+					int fOffset = (int)(workingPosition * blockHt * Repeat);// : Speed * frame / 4 % blockHt);
 					if (Direction == BarDirection.AlternateUp || Direction == BarDirection.AlternateDown)
 					{
-						fOffset = (int)(Math.Floor(_position * barCount) * barHt);
+						fOffset = (int)(Math.Floor(workingPosition * barCount) * barHt);
 					}
-					if (Direction == BarDirection.Down || Direction == BarDirection.AlternateDown || Direction == BarDirection.Expand)
-					{
-						fOffset = -fOffset;
-					}
-
+					
 					int indexAdjust = 1;
 
 					int i = 0;
 					bool exitLoop = false;
+
 					foreach (IGrouping<int, ElementLocation> elementLocations in nodes)
 					{
-						
 						int y = elementLocations.Key;
-						n = y + fOffset;
-						colorIdx = Math.Abs( ((n + indexAdjust) % blockHt) / barHt );
+
+						switch (Direction)
+						{
+							case BarDirection.Down:
+							case BarDirection.AlternateDown:
+							case BarDirection.Expand:
+								n = (bufferHt+bufferHtOffset) - (_negPosition?bufferHt-y-1:y) + fOffset;
+								break;
+							default:
+								n =  (_negPosition?bufferHt-y-1:y) - bufferHtOffset + fOffset;
+								break;
+						}
 						
+						colorIdx = ((n + indexAdjust) % blockHt) / barHt;
 						//we need the integer division here to make things work
-						double colorPosition = Math.Abs( (double)(n + indexAdjust) / barHt - (n + indexAdjust) / barHt );
-						Color c = Colors[colorIdx].GetColorAt(colorPosition);
+						var colorPosition =(n + indexAdjust) % barHt / (double)barHt;
+						Color c = Colors[colorIdx].GetColorAt(colorPosition); 
+						
 						if (Highlight || Show3D)
 						{
 							var hsv = HSV.FromRGB(c);
-							if (Highlight && (n + indexAdjust) % barHt == 0) hsv.S = 0.0f;
+							if (Highlight && (n + indexAdjust) % barHt == 0 || colorPosition > .95) hsv.S = 0.0f;
 							if (Show3D) hsv.V *= (float)(barHt - (n + indexAdjust) % barHt - 1) / barHt;
 							hsv.V *= level;
 							c = hsv.ToRGB();
@@ -681,31 +700,39 @@ namespace VixenModules.Effect.Bars
 				else
 				{
 					
-					int fOffset = (int)(_position * blockWi * Repeat);
+					int fOffset = (int)(workingPosition * blockWi * Repeat);
 					if (Direction > BarDirection.AlternateDown)
 					{
-						fOffset = (int)(Math.Floor(_position * barCount) * barWi);
+						fOffset = (int)(Math.Floor(workingPosition * barCount) * barWi);
 					}
-					if (Direction == BarDirection.Right || Direction == BarDirection.AlternateRight || Direction == BarDirection.HCompress)
-					{
-						fOffset = -fOffset;
-					}
-
+					
 					int i = 0;
 					
 					foreach (IGrouping<int, ElementLocation> elementLocations in nodes)
 					{
 						int x = elementLocations.Key;
-						n = x + fOffset;
-						colorIdx = Math.Abs( ((n + 1) % blockWi) / barWi );
+						
+						switch (Direction)
+						{
+							case BarDirection.Right:
+							case BarDirection.AlternateRight:
+								case BarDirection.HCompress:
+								n = (bufferWi+bufferWiOffset) - (_negPosition?bufferWi-x-1:x) + fOffset;
+								break;
+							default:
+								n = (_negPosition?bufferWi-x-1:x) - bufferWiOffset + fOffset;
+								break;
+						}
+						
 						//we need the integer division here to make things work
-						double colorPosition = Math.Abs(  (double)(n + 1) / barWi - (n + 1) / barWi );
+						colorIdx = (n + 1) % blockWi / barWi;
+						double colorPosition = (n + 1) % barWi / (double)barWi;
 						Color c = Colors[colorIdx].GetColorAt(colorPosition);
-
+						
 						if (Highlight || Show3D)
 						{
 							var hsv = HSV.FromRGB(c);
-							if (Highlight && n % barWi == 0) hsv.S = 0.0f;
+							if (Highlight && (n+1) % barWi == 0 || colorPosition > .95) hsv.S = 0.0f;
 							if (Show3D) hsv.V *= (float)(barWi - n % barWi - 1) / barWi;
 							hsv.V *= level;
 							c = hsv.ToRGB();

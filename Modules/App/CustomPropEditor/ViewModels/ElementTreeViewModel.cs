@@ -8,10 +8,12 @@ using System.Windows;
 using System.Windows.Controls;
 using System.Windows.Forms;
 using Catel.Data;
+using Catel.IoC;
 using Catel.MVVM;
 using Catel.Services;
 using Common.Controls;
 using Common.Controls.NameGeneration;
+using Common.WPFCommon.Services;
 using GongSolutions.Wpf.DragDrop;
 using GongSolutions.Wpf.DragDrop.Utilities;
 using VixenModules.App.CustomPropEditor.Converters;
@@ -179,7 +181,7 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 			var result = RequestNewGroupName(String.Empty);
 			if (result.Result == MessageResult.OK)
 			{
-				var elementsToGroup = SelectedItems.Select(x => x.ElementModel).ToList();
+				var elementsToGroup = SelectedItems.Select(x => x.ElementModel).Distinct().ToList();
 				DeselectAll();
 				PropModelServices.Instance().CreateGroupForElementModels(result.Response, elementsToGroup);
 				OnModelsChanged();
@@ -687,7 +689,7 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 
 		public void ClearIsDirty()
 		{
-			this.ClearIsDirtyOnAllChilds();
+			this.ClearIsDirtyOnAllChildren();
 		}
 
 		public void DeselectAll()
@@ -724,9 +726,10 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 			       SelectedItems.Select(x => x.ElementModel).All(x => x != Prop.RootNode && x.ElementType == type);
 		}
 
-		private static MessageBoxResponse RequestNewGroupName(string suggestedName)
+		private MessageBoxResponse RequestNewGroupName(string suggestedName)
 		{
-			MessageBoxService mbs = new MessageBoxService();
+			var dependencyResolver = this.GetDependencyResolver();
+			var mbs = dependencyResolver.Resolve<IMessageBoxService>();
 			return mbs.GetUserInput("Please enter the group name.", "Create Group", suggestedName);
 		}
 
@@ -939,7 +942,9 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 
 				if (targetModel != null)
 				{
-					foreach (var elementModelViewModel in models.Reverse())
+					bool reverse = dropInfo.KeyStates == DragDropKeyStates.ControlKey;
+					var elementIndex = 0;
+					foreach (var elementModelViewModel in reverse?models.Reverse():models)
 					{
 					    elementModelViewModel.IsSelected = false;
                         if (dropInfo.Effects == DragDropEffects.Move)
@@ -956,13 +961,13 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 						            if (sourceModelParent == targetModelParent)
 						            {
                                         //Our parent is the same so we can just move it within the parent
-                                        pms.MoveWithinParent(sourceModelParent.ElementModel, elementModelViewModel.ElementModel, dropInfo.InsertIndex);
+                                        pms.MoveWithinParent(sourceModelParent.ElementModel, elementModelViewModel.ElementModel, dropInfo.InsertIndex+elementIndex);
 						                elementModelViewModel.IsSelected = true;
 						            }
 						            else
 						            {
                                         //We are moving to a new parent
-						                pms.InsertToParent(elementModelViewModel.ElementModel, targetModelParent.ElementModel, dropInfo.InsertIndex);
+						                pms.InsertToParent(elementModelViewModel.ElementModel, targetModelParent.ElementModel, dropInfo.InsertIndex+elementIndex);
                                         pms.RemoveFromParent(elementModelViewModel.ElementModel, sourceModelParent.ElementModel);
 										SelectModelWithParent(elementModelViewModel, targetModelParent);
 						            }
@@ -983,7 +988,7 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 						            else
 						            {
 						                //We are moving to a new parent
-						                pms.InsertToParent(elementModelViewModel.ElementModel, targetModelParent.ElementModel, dropInfo.InsertIndex);
+						                pms.InsertToParent(elementModelViewModel.ElementModel, targetModelParent.ElementModel, dropInfo.InsertIndex+elementIndex);
 						                pms.RemoveFromParent(elementModelViewModel.ElementModel, sourceModelParent.ElementModel);
 										SelectModelWithParent(elementModelViewModel, targetModelParent);
                                     }
@@ -1006,6 +1011,8 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 						        }
                             }
 						}
+
+                        elementIndex++;
 					}
 				}
 			}
@@ -1137,6 +1144,12 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 
 		/// <inheritdoc />
 		public void Dropped(IDropInfo dropInfo)
+		{
+			
+		}
+
+		/// <inheritdoc />
+		public void DragDropOperationFinished(DragDropEffects operationResult, IDragInfo dragInfo)
 		{
 			
 		}

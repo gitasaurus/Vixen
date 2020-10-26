@@ -44,7 +44,6 @@ namespace Common.Controls.Timeline
 		private Row m_mouseDownElementRow = null;
 		            // the row that the clicked m_mouseDownElement belongs to (a single element may be in multiple rows)
 
-		private TimeSpan m_cursorPosition; // the current grid 'cursor' position (line drawn vertically);
 		private BackgroundWorker renderWorker;
 		private BlockingCollection<Element> _blockingElementQueue = new BlockingCollection<Element>();
 		private ManualResetEventSlim renderWorkerFinished;
@@ -57,7 +56,6 @@ namespace Common.Controls.Timeline
 		public bool isColorDrop { get; set; }
 		public bool isCurveDrop { get; set; }
 		public bool isGradientDrop { get; set; }
-		private MouseButtons MouseButtonDown;
 		public string alignmentHelperWarning = @"Too many effects selected on the same row for this action.\nMax selected effects per row for this action is 4";
 		public bool aCadStyleSelectionBox { get; set; }
 
@@ -103,6 +101,7 @@ namespace Common.Controls.Timeline
 			Row.RowSelectedChanged += RowSelectedChangedHandler;
 			Row.RowToggled += RowToggledHandler;
             Row.RowHeightChanged += RowHeightChangedHandler;
+			TimeLineGlobalEventManager.Manager.AlignmentActivity += TimeLineAlignmentHandler;
 
 			// Drag & Drop
 			AllowDrop = true;
@@ -148,6 +147,7 @@ namespace Common.Controls.Timeline
 			Row.RowSelectedChanged -= RowSelectedChangedHandler;
 			Row.RowToggled -= RowToggledHandler;
 			Row.RowHeightChanged -= RowHeightChangedHandler;
+			TimeLineGlobalEventManager.Manager.AlignmentActivity -= TimeLineAlignmentHandler;
 
 			TimeInfo= null;
 
@@ -213,6 +213,8 @@ namespace Common.Controls.Timeline
 			}
 		}
 
+		public bool ShowEffectToolTip { get; set; } = true;
+
 		public bool EnableSnapTo { get; set; }
 
 		public int SnapStrength
@@ -263,6 +265,23 @@ namespace Common.Controls.Timeline
 		{
 			get { return m_rows; }
 			protected set { m_rows = value; }
+		}
+
+		public void HighlightRowsWithEffects(bool enable)
+		{
+			RowLabel.ShowActiveIndicators = enable;
+			InvalidateRowLabels();
+		}
+
+		/// <summary>
+		/// Invalidates the Visible row labels so they will be redrawn.
+		/// </summary>
+		internal void InvalidateRowLabels()
+		{
+			foreach (var gridVisibleRow in VisibleRows)
+			{
+				gridVisibleRow.RowLabel.Invalidate();
+			}
 		}
 
 		public IEnumerable<Element> SelectedElements
@@ -364,6 +383,8 @@ namespace Common.Controls.Timeline
 		private int CurrentRowIndexUnderMouse { get; set; }
 		private SortedDictionary<TimeSpan, List<SnapDetails>> StaticSnapPoints { get; set; }
 		private SortedDictionary<TimeSpan, List<SnapDetails>> CurrentDragSnapPoints { get; set; }
+
+		private IEnumerable<TimeSpan> MarkAlignmentPoints { get; set; } = Enumerable.Empty<TimeSpan>();
 		private List<Element> tempSelectedElements = new List<Element>();
 
 		public SequenceLayers SequenceLayers { get; set; }
@@ -460,6 +481,12 @@ namespace Common.Controls.Timeline
 		#endregion
 
 		#region Event Handlers - non-mouse events
+
+		private void TimeLineAlignmentHandler(object sender, AlignmentEventArgs e)
+		{
+			Logging.Info($"Alignment event {e.Active}");
+			MarkAlignmentPoints = e.Times ?? Enumerable.Empty<TimeSpan>();
+		}
 
 		protected void RowChangedHandler(object sender, EventArgs e)
 		{
@@ -1012,6 +1039,20 @@ namespace Common.Controls.Timeline
 
 		}
 
+		public void SplitSelectedElementsAtMouseLocation()
+		{
+			if (SelectedElements.Any())
+			{
+				var time = TimeAtPosition(MousePosition);
+				if(VisibleTimeStart < time && time < VisibleTimeEnd)
+				{
+					SplitElementsAtTime(SelectedElements.Where(elem => elem.StartTime < time && elem.EndTime > time)
+						.ToList(), time);
+				}
+			}
+			
+		}
+
 		/// <summary>
 		/// Closes the gap between elements in which the gap is less than the set threshold - time in seconds.
 		/// If any effects are selected, this applies to only selected effects, otherwise it applies to all elements
@@ -1103,7 +1144,7 @@ namespace Common.Controls.Timeline
 		/// <param name="start"></param>
 		/// <param name="duration"></param>
 		/// <param name="moveType">Optional move type. Defaults to Move</param>
-		/// <returns>Boolen indicating whether the move occured</returns>
+		/// <returns>Boolen indicating whether the move occurred</returns>
 		public bool MoveResizeElement(Element element, TimeSpan start, TimeSpan duration, ElementMoveType moveType = ElementMoveType.Move)
 		{
 			if (element == null || start > TotalTime || start + duration > TotalTime 
@@ -1135,7 +1176,7 @@ namespace Common.Controls.Timeline
 		/// <param name="element"></param>
 		/// <param name="start"></param>
 		/// <param name="end"></param>
-		/// <returns>Boolen indicating whether the move occured</returns>
+		/// <returns>Boolen indicating whether the move occurred</returns>
 		public bool MoveResizeElementByStartEnd(Element element, TimeSpan start, TimeSpan end)
 		{
 			if (element == null || start > TotalTime || end > TotalTime || start >= end)
@@ -1216,6 +1257,26 @@ namespace Common.Controls.Timeline
 			}
 
 			return containingRow;
+		}
+
+		protected List<Tuple<Row, int>> RowsIn(Rectangle r)
+		{
+			List<Tuple<Row,int>> containingRows= new List<Tuple<Row, int>>();
+			int currentHeight = 0;
+			var areaBottomY = r.Y + r.Height;
+			foreach (Row row in VisibleRows)
+			{
+				if (r.Y < currentHeight + row.Height) {
+					containingRows.Add(new Tuple<Row, int>(row, currentHeight));
+				}
+				currentHeight += row.Height;
+				if (currentHeight > areaBottomY)
+				{
+					break;
+				}
+			}
+
+			return containingRows;
 		}
 
 		public Element ElementAtPosition(Point p)
@@ -1417,19 +1478,20 @@ namespace Common.Controls.Timeline
 		// 
 		// Thus, until proven otherwise, I say we leave it like this. A cursory look at CPU usage says we
 		// are no worse than Windows Explorer (although it would be hard to be much worse.)
-		private void selectElementsWithin(Rectangle SelectedArea)
+		private void selectElementsWithin(Rectangle SelectedArea, bool useCAD = false)
 		{
 			if (SelectedArea.Size.IsEmpty) return;
-			Row startRow = rowAt(SelectedArea.Location);
-			Row endRow = rowAt(SelectedArea.BottomRight());
-
+			var containingRows = RowsIn(SelectedArea);
 			TimeSpan selStart = pixelsToTime(SelectedArea.Left);
 			TimeSpan selEnd = pixelsToTime(SelectedArea.Right);
-			int selTop = SelectedArea.Top;
-			int selBottom = selTop + SelectedArea.Height;
-			string moveDirection = (SelectedArea.Left < mouseDownGridLocation.X || !aCadStyleSelectionBox) ? "Left" : "Right";
+			int selBottom = SelectedArea.Top + SelectedArea.Height;
+			string moveDirection = "Left";
+			if (useCAD)
+			{
+				moveDirection = (SelectedArea.Left < mouseDownGridLocation.X || !aCadStyleSelectionBox) ? "Left" : "Right";
+			}
 
-			SelectionBorder = (moveDirection == "Right") ? Color.Green : Color.Blue;
+			SelectionBorder = moveDirection == "Right" ? Color.Green : Color.Blue;
 
 			SupressSelectionEvents = true;
 			// deselect all elements in the grid first, then only select the ones in the box.
@@ -1445,63 +1507,43 @@ namespace Common.Controls.Timeline
 			}
 
 			// Iterate all elements of only the rows within our selection.
-			bool startFound = false, endFound = false;
-			foreach (var row in Rows) {
-				if (
-					!row.Visible || // row is invisible
-					endFound || // we already passed the end row
-					(!startFound && (row != startRow)) //we haven't found the first row, and this isn't it
-					) {
-					continue;
-				}
+			foreach (var row in containingRows) {
+				
+				// This row is in our selection
+				foreach (var elem in row.Item1) {
+					if(elem.StartTime > selEnd) break;
 
-				// If we already found the first row, or we haven't, but this is it
-				if (startFound || row == startRow) {
-					startFound = true;
+					var elemTop = row.Item2 + elem.RowTopOffset;
+					var elemBottom = elemTop + elem.DisplayHeight;
 
-					// This row is in our selection
-					foreach (var elem in row) {
-						int elemTop = elem.DisplayTop;
-						int elemBottom = elemTop + elem.DisplayHeight;
-						if (DragBoxFilterEnabled)
+					if (DragBoxFilterEnabled)
+					{
+						if (moveDirection == "Left")
 						{
-							if (moveDirection == "Left")
-							{
-								elem.Selected = (ShiftPressed && tempSelectedElements.Contains(elem)
-									? true
-									: ((elem.StartTime < selEnd && elem.EndTime > selStart) && (elemTop < selBottom && elemBottom > selTop) &&
-									   DragBoxFilterTypes.Contains(elem.EffectNode.Effect.TypeId)));
-							}
-							else
-							{
-								elem.Selected = (ShiftPressed && tempSelectedElements.Contains(elem)
-									? true
-									: ((elem.StartTime > selStart && elem.EndTime < selEnd) && (elemTop > selTop && elemBottom < selBottom) &&
-									   DragBoxFilterTypes.Contains(elem.EffectNode.Effect.TypeId)));
-							}
+							elem.Selected = (ShiftPressed && tempSelectedElements.Contains(elem) || ((elem.StartTime < selEnd && elem.EndTime > selStart) && 
+							                                                                         elemTop < selBottom && elemBottom > SelectedArea.Top && DragBoxFilterTypes.Contains(elem.EffectNode.Effect.TypeId)));
 						}
 						else
 						{
-							if (moveDirection == "Left")
-							{
-								elem.Selected = (ShiftPressed && tempSelectedElements.Contains(elem)
-									? true
-									: ((elem.StartTime < selEnd && elem.EndTime > selStart) && (elemTop < selBottom && elemBottom > selTop)));
-							}
-							else
-							{
-								elem.Selected = (ShiftPressed && tempSelectedElements.Contains(elem)
-									? true
-									: ((elem.StartTime > selStart && elem.EndTime < selEnd) && (elemTop > selTop && elemBottom < selBottom)));
-							}
+							elem.Selected = (ShiftPressed && tempSelectedElements.Contains(elem) || ((elem.StartTime > selStart && elem.EndTime < selEnd) && 
+							                                                                         elemTop > SelectedArea.Top && elemBottom < selBottom && DragBoxFilterTypes.Contains(elem.EffectNode.Effect.TypeId)));
 						}
 					}
-
-					if (row == endRow) {
-						endFound = true;
-						continue;
+					else
+					{
+						if (moveDirection == "Left")
+						{
+							elem.Selected = (ShiftPressed && tempSelectedElements.Contains(elem) || (elem.StartTime < selEnd && elem.EndTime > selStart && 
+							                                                                         elemTop < selBottom && elemBottom > SelectedArea.Top ));
+						}
+						else
+						{
+							elem.Selected = (ShiftPressed && tempSelectedElements.Contains(elem) || elem.StartTime > selStart && elem.EndTime < selEnd && 
+							                 elemTop > SelectedArea.Top && elemBottom < selBottom);
+						}
 					}
 				}
+			
 			} // end foreach
 			SupressSelectionEvents = false;
 			_SelectionChanged();
@@ -2198,6 +2240,7 @@ namespace Common.Controls.Timeline
 			foreach (KeyValuePair<TimeSpan, List<SnapDetails>> kvp in StaticSnapPoints)
 			{
 				if (kvp.Key >= VisibleTimeEnd) break;
+				if(MarkAlignmentPoints.Contains(kvp.Key)) continue;
 				if (kvp.Key >= VisibleTimeStart) {
 					SnapDetails details = null;
 					foreach (SnapDetails d in kvp.Value)
@@ -2221,6 +2264,18 @@ namespace Common.Controls.Timeline
 					
 				}
 			}
+
+			if (m_dragState == DragState.Normal)
+			{
+				p = new Pen(Brushes.Yellow) { DashPattern = new float[] { 2, 2 } };
+
+				foreach (var activeTime in MarkAlignmentPoints)
+				{
+					var x1 = timeToPixels(activeTime);
+					g.DrawLine(p, x1, 0, x1, AutoScrollMinSize.Height);
+				}
+			}
+
 			p.Dispose();
 		}
 
@@ -2322,7 +2377,7 @@ namespace Common.Controls.Timeline
 		    catch (Exception exception)
 		    {
 		        // there may be some threading exceptions; if so, they're unexpected.  Log them.
-		        Logging.Error("background rendering worker exception:", exception);
+		        Logging.Error(exception,"background rendering worker exception:");
 		    }
 		    renderWorkerFinished.Set();
 		}
@@ -2466,7 +2521,7 @@ namespace Common.Controls.Timeline
 		private void _drawInfo(Graphics g)
 		{
 
-			if (capturedElements.Any())
+			if (ShowEffectToolTip && capturedElements.Any())
 			{
 				Element element = capturedElements.First();
 				if (element == null) return;
@@ -2614,10 +2669,10 @@ namespace Common.Controls.Timeline
 					//Logging.Info("OnPaint: " + s.ElapsedMilliseconds);
 				}
 				catch (Exception ex) {
-					Logging.Error("Exception in TimelineGrid.OnPaint()",ex);
+					Logging.Error(ex, "Exception in TimelineGrid.OnPaint()");
 					//messageBox Arguments are (Text, Title, No Button Visible, Cancel Button Visible)
 					MessageBoxForm.msgIcon = SystemIcons.Error; //this is used if you want to add a system icon to the message form.
-					var messageBox = new MessageBoxForm("An unexpected error occured while drawing the grid. Please notify the Vixen team and provide the error logs.",
+					var messageBox = new MessageBoxForm("An unexpected error occurred while drawing the grid. Please notify the Vixen team and provide the error logs.",
 						@"Error", false, false);
 					messageBox.ShowDialog();
 				}

@@ -13,7 +13,7 @@ namespace VixenModules.Property.Order
 {
 	public partial class OrderSetupHelper : BaseForm, IElementSetupHelper
 	{
-		private readonly Dictionary<ElementNode, int>  _elementOrderLookup = new Dictionary<ElementNode, int>();
+		private readonly Dictionary<IElementNode, int>  _elementOrderLookup = new Dictionary<IElementNode, int>();
 		private readonly ContextMenuStrip _contextMenu = new ContextMenuStrip();
 
 		public OrderSetupHelper()
@@ -40,6 +40,10 @@ namespace VixenModules.Property.Order
 						var reverseItems = new ToolStripMenuItem("Reverse");
 						reverseItems.Click += ReverseItems_Click;
 						_contextMenu.Items.Add(reverseItems);
+						var zigzagItems = new ToolStripMenuItem("Zig Zag...");
+						zigzagItems.Click += ZigZagItems_Click;
+						_contextMenu.Items.Add(zigzagItems);
+
 					}
 					_contextMenu.Show(elementList, e.Location);
 				}
@@ -51,7 +55,7 @@ namespace VixenModules.Property.Order
 			var selectedindexes = elementList.SelectedIndices;
 			var indexMap = new Dictionary<int, ListViewItem>();
 			int counter = selectedindexes.Count - 1;
-			foreach (int selectedindex in selectedindexes)
+			foreach (int selectedindex in selectedindexes)          
 			{
 				indexMap.Add(selectedindexes[counter--], elementList.Items[selectedindex]);
 			}
@@ -66,13 +70,76 @@ namespace VixenModules.Property.Order
 			ReIndexElementNodes();
 		}
 
+		private void ZigZagItems_Click(object sender, EventArgs e)
+		{
+			var selectedindexes = elementList.SelectedIndices;
+			var indexMap = new Dictionary<int, ListViewItem>();
+			int IterationCounter = 0;
+
+			NumberDialog numberDialog = new NumberDialog("ZigZag Length", "How many pixels to ZigZag?", 2, 2, selectedindexes.Count);
+			DialogResult Answer;
+			do
+			{
+				Answer = numberDialog.ShowDialog();
+				if (Answer == DialogResult.OK)
+				{
+					if (selectedindexes.Count % numberDialog.Value == 0) // Selected pixels must be evenly divisable by zigzag length.
+					{
+						int ZigZagLength = numberDialog.Value;
+						for (int i = 1; i < (selectedindexes.Count / (ZigZagLength * 2) + .5); i++)
+						{
+							for (int Zig = 1; Zig <= ZigZagLength; Zig++)
+							{
+								IterationCounter++;
+								indexMap.Add(selectedindexes[IterationCounter - 1], elementList.Items[selectedindexes[IterationCounter - 1]]);
+							}
+
+							if (IterationCounter >= selectedindexes.Count)
+							{
+								break;
+							}
+							int LastZig = IterationCounter;
+
+							for (int Zag = ZigZagLength; Zag >= 1; Zag--)
+							{
+								IterationCounter++;
+								indexMap.Add(selectedindexes[LastZig + Zag - 1], elementList.Items[selectedindexes[IterationCounter - 1]]);
+							}
+
+							if (IterationCounter >= selectedindexes.Count)
+							{
+								break;
+							}
+						}
+
+						foreach (var item in indexMap)
+						{
+							elementList.Items.RemoveAt(item.Key);
+							elementList.Items.Insert(item.Key, (ListViewItem)item.Value.Clone());
+							elementList.Items[item.Key].Selected = true;
+						}
+
+						ReIndexElementNodes();
+						return;
+					}
+					else
+					{
+						//messageBox Arguments are (Text, Title, No Button Visible, Cancel Button Visible)
+						var messageBox = new MessageBoxForm("The total selected pixels must be evenly divisable by the zigzag length", "Zigzag Error", false, false);
+						MessageBoxForm.msgIcon = System.Drawing.SystemIcons.Exclamation; //this is used if you want to add a system icon to the message form.
+						messageBox.ShowDialog();
+					}
+				}
+			} while (Answer == DialogResult.OK);
+		}
+
 		#region Implementation of IElementSetupHelper
 
 		/// <inheritdoc />
 		public string HelperName => "Patching Order";
 
 		/// <inheritdoc />
-		public bool Perform(IEnumerable<ElementNode> selectedNodes)
+		public bool Perform(IEnumerable<IElementNode> selectedNodes)
 		{
 			PopulateElementList(selectedNodes);
 
@@ -109,9 +176,9 @@ namespace VixenModules.Property.Order
 
 		#endregion
 
-		private void PopulateElementList(IEnumerable<ElementNode> selectedNodes)
+		private void PopulateElementList(IEnumerable<IElementNode> selectedNodes)
 		{
-			IEnumerable<ElementNode> leafElements = selectedNodes.SelectMany(x => x.GetLeafEnumerator()).Distinct();
+			IEnumerable<IElementNode> leafElements = selectedNodes.SelectMany(x => x.GetLeafEnumerator()).Distinct();
 
 			_elementOrderLookup.Clear();
 			foreach (var leafElement in leafElements)
@@ -149,14 +216,14 @@ namespace VixenModules.Property.Order
 			int index = 1;
 			foreach (ListViewItem item in elementList.Items)
 			{
-				var elementNode = item.Tag as ElementNode;
-				if (elementNode == null)
+				var IElementNode = item.Tag as IElementNode;
+				if (IElementNode == null)
 				{
 					continue; // This should not happen!
 				}
 
 				item.Text = index.ToString(CultureInfo.InvariantCulture);
-				_elementOrderLookup[elementNode] = index;
+				_elementOrderLookup[IElementNode] = index;
 				index++;
 			}
 			elementList.Invalidate();
@@ -167,5 +234,5 @@ namespace VixenModules.Property.Order
 			ReIndexElementNodes();
 		}
 
+		}
 	}
-}

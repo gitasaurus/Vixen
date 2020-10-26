@@ -1,22 +1,15 @@
 ﻿using Common.Controls;
 using System;
 using System.Collections.Generic;
-using System.ComponentModel;
-using System.Data;
+using System.Diagnostics.Eventing.Reader;
 using System.Drawing;
 using System.Linq;
-using System.Text;
 using System.Windows.Forms;
 using Common.Controls.Scaling;
 using Common.Controls.Theme;
 using Common.Resources;
 using Common.Resources.Properties;
-using Vixen.Data.Flow;
-using Vixen.Module;
-using Vixen.Module.OutputFilter;
-using Vixen.Services;
 using Vixen.Sys;
-using Vixen.Sys.Output;
 
 namespace VixenModules.Preview.VixenPreview.Shapes
 {
@@ -25,6 +18,7 @@ namespace VixenModules.Preview.VixenPreview.Shapes
         private List<PreviewSetElementString> _strings = new List<PreviewSetElementString>();
         private List<PreviewBaseShape> _shapes;
         private bool connectStandardStrings;
+        private const string VirtualNodeName = @"VIRT";
 
         public PreviewSetElements(List<PreviewBaseShape> shapes)
         {
@@ -73,9 +67,8 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 
             if (_shapes[0].Parent != null)
             {
-                string shapeType = "";
-                shapeType = _shapes[0].Parent.GetType().ToString();
-                if ((shapeType.Contains("Icicle") && _shapes[0].StringType != PreviewBaseShape.StringTypes.Standard) || shapeType.Contains("MultiString") )
+	            var shapeType = _shapes[0].Parent.GetType().ToString();
+	            if ((shapeType.Contains("Icicle") && _shapes[0].StringType != PreviewBaseShape.StringTypes.Standard) || shapeType.Contains("MultiString") )
                 {
                     tblLightCountControls.Visible = true;
                 }
@@ -84,9 +77,59 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 
         private void PreviewSetElements_Load(object sender, EventArgs e)
         {
-            PreviewTools.PopulateElementTree(treeElements);
+            PopulateElementTree(treeElements);
+			treeElements.BeforeExpand += TreeElements_BeforeExpand;
             PopulateStringList();
             UpdateListLinkedElements();
+        }
+
+		private void TreeElements_BeforeExpand(object sender, TreeViewCancelEventArgs e)
+		{
+			if (e.Node.Tag is ElementNode elementNode)
+			{
+				if (elementNode.Children.Any() && e.Node.Nodes.Count == 1 && e.Node.Nodes[0].Name.Equals(VirtualNodeName))
+				{
+					AddChildrenToTree(e.Node, elementNode);
+				}
+			}
+		}
+
+		// 
+		// Add the root nodes to the Display Element tree
+		//
+		private static void PopulateElementTree(TreeView tree)
+        {
+	        foreach (ElementNode channel in VixenSystem.Nodes.GetRootNodes()) {
+		        AddNodeToElementTree(tree.Nodes, channel);
+	        }
+        }
+
+        // 
+        // Add each child Display Element or Display Element Group to the tree
+        // 
+        private static void AddNodeToElementTree(TreeNodeCollection collection, ElementNode elementNode)
+        {
+	        TreeNode addedNode = new TreeNode();
+	        addedNode.Name = elementNode.Id.ToString();
+	        addedNode.Text = elementNode.Name;
+	        addedNode.Tag = elementNode;
+	        collection.Add(addedNode);
+
+	        if(elementNode.Children.Any())
+	        {
+		        TreeNode virtNode = new TreeNode();
+		        virtNode.Name = VirtualNodeName;
+		        addedNode.Nodes.Add(virtNode);
+	        }
+        }
+
+        private void AddChildrenToTree(TreeNode node, ElementNode elementNode)
+        {
+	        node.Nodes.Clear();
+	        foreach (ElementNode childNode in elementNode.Children)
+	        {
+		        AddNodeToElementTree(node.Nodes, childNode);
+	        }
         }
 
         private void PopulateStringList()
@@ -119,7 +162,7 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 
         private void treeElements_ItemDrag(object sender, ItemDragEventArgs e)
         {
-            treeElements.DoDragDrop(treeElements.SelectedNodes, DragDropEffects.Copy);
+            treeElements.DoDragDrop(treeElements.SelectedNodes, DragDropEffects.Link);
         }
 
         private void listLinkedElements_DragDrop(object sender, DragEventArgs e)
@@ -146,16 +189,13 @@ namespace VixenModules.Preview.VixenPreview.Shapes
                     ElementNode channelNode = treeNode.Tag as ElementNode;
 
                     SetLinkedElementItems(item, channelNode);
-	                AdjustColumnWidths();
 
-					if (item.Index == listLinkedElements.Items.Count - 1)
+                    if (item.Index == listLinkedElements.Items.Count - 1)
                     {
-                        return;
+                        break;
                     }
-                    else
-                    {
-                        item = listLinkedElements.Items[item.Index + 1];
-                    }
+                   
+	                item = listLinkedElements.Items[item.Index + 1];
                 }
                 else
                 {
@@ -165,26 +205,48 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 					messageBox.ShowDialog();
                 }
             }
+            AdjustColumnWidths();
         }
 
         private void listLinkedElements_DragEnter(object sender, DragEventArgs e)
         {
-            e.Effect = e.AllowedEffect;
+
+	        if(e.Data.GetDataPresent(typeof(List<TreeNode>)))
+	        {
+		        Point targetPoint = listLinkedElements.PointToClient(new Point(e.X, e.Y));
+		        ListViewItem itemToSelect = listLinkedElements.GetItemAt(targetPoint.X, targetPoint.Y);
+		        e.Effect = itemToSelect != null ? e.AllowedEffect : DragDropEffects.None;
+			}else
+	        {
+		        e.Effect = DragDropEffects.None;
+	        }
+
         }
 
         private void listLinkedElements_DragOver(object sender, DragEventArgs e)
         {
-            // Retrieve the client coordinates of the mouse position.
-            Point targetPoint = listLinkedElements.PointToClient(new Point(e.X, e.Y));
-            // Select the node at the mouse position.
-            ListViewItem itemToSelect = listLinkedElements.GetItemAt(targetPoint.X, targetPoint.Y);
-            foreach (ListViewItem item in listLinkedElements.Items)
-            {
-                if (itemToSelect == item)
-                    item.Selected = true;
-                else
-                    item.Selected = false;
-            }
+	        if(e.Data.GetDataPresent(typeof(List<TreeNode>)))
+	        {
+		        // Retrieve the client coordinates of the mouse position.
+		        Point targetPoint = listLinkedElements.PointToClient(new Point(e.X, e.Y));
+		        // Select the node at the mouse position.
+		        ListViewItem itemToSelect = listLinkedElements.GetItemAt(targetPoint.X, targetPoint.Y);
+		        listLinkedElements.SelectedItems.Clear();
+		        if (itemToSelect != null)
+		        {
+			        e.Effect = e.AllowedEffect;
+			        itemToSelect.Selected = true;
+		        }
+		        else
+		        {
+			        e.Effect = DragDropEffects.None;
+		        }
+	        }
+	        else
+	        {
+		        e.Effect = DragDropEffects.None;
+	        }
+           
         }
 
         private void UpdateListLinkedElements()

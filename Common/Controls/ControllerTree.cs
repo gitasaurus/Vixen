@@ -29,6 +29,7 @@ namespace Common.Controls
 		private static NLog.Logger Logging = NLog.LogManager.GetCurrentClassLogger();
 		private bool _someSelectedControllersRunning;
 		private bool _someSelectedControllersNotRunning;
+		private bool isDoubleClick;
 
 		public ControllerTree()
 		{
@@ -91,6 +92,30 @@ namespace Common.Controls
 				treeview.TopNode = treeview.SelectedNodes[0];
 		}
 
+		/// <summary>
+		/// Add a new controller without rebuilding the entire tree
+		/// </summary>
+		/// <param name="controller"></param>
+		public void AddControllerToTree(IControllerDevice controller)
+		{
+			treeview.BeginUpdate();
+			treeview.SelectedNodes.Clear();
+			_topDisplayedNodes.Clear();
+			AddControllerToTree(treeview.Nodes, controller);
+			_selectedNodes.Clear();
+			_selectedNodes.Add(GenerateEquivalentTreeNodeFullPathFromController(controller));
+
+			var treeNode = treeview.Nodes[treeview.Nodes.Count - 1];
+			//Select the new controller
+			treeview.AddSelectedNode(treeview.Nodes[treeview.Nodes.Count - 1]);
+
+			treeview.EndUpdate();
+
+			treeNode.EnsureVisible();
+
+			OnControllerSelectionChanged();
+		}
+
 
 		private void _PopulateControllerTree(IEnumerable<string> treeNodesToSelect = null)
 		{
@@ -112,7 +137,6 @@ namespace Common.Controls
 			}
 
 			
-
 			// if a new controller has been passed in to select, select it instead.
 			if (treeNodesToSelect != null) {
 				_selectedNodes = new HashSet<string>(treeNodesToSelect);
@@ -263,10 +287,7 @@ namespace Common.Controls
 			controllerNode.Text = controller.Name;
 			controllerNode.Tag = controller;
 
-			if (controller.IsRunning)
-				controllerNode.ImageKey = controllerNode.SelectedImageKey = "Group";
-			else
-				controllerNode.ImageKey = controllerNode.SelectedImageKey = "RedBall";
+			SetControllerImage(controllerNode, controller.IsRunning);
 
 			for (int i = 0; i < controller.OutputCount; i++) {
 				TreeNode channelNode = new TreeNode();
@@ -276,17 +297,101 @@ namespace Common.Controls
 				IDataFlowComponentReference source = controller.Outputs[i].Source;
 
 				if (source == null) {
-					channelNode.ImageKey = channelNode.SelectedImageKey = "WhiteBall";
+					channelNode.ImageKey = channelNode.SelectedImageKey = @"WhiteBall";
 				} else if (source.Component == null || source.OutputIndex < 0) {
-					channelNode.ImageKey = channelNode.SelectedImageKey = "GreyBall";
+					channelNode.ImageKey = channelNode.SelectedImageKey = @"GreyBall";
 				} else {
-					channelNode.ImageKey = channelNode.SelectedImageKey = "GreenBall";
+					channelNode.ImageKey = channelNode.SelectedImageKey = @"GreenBall";
 				}
 
 				controllerNode.Nodes.Add(channelNode);
 			}
 
 			collection.Add(controllerNode);
+		}
+
+		public void RefreshControllerName(IControllerDevice controller)
+		{
+			var path = GenerateEquivalentTreeNodeFullPathFromController(controller);
+			var node = FindNodeInTreeAtPath(treeview, path);
+			if (node.Tag == controller)
+			{
+				node.Text = controller.Name;
+			}
+		}
+
+		public void RefreshControllerStatus()
+		{
+			treeview.BeginUpdate();
+			foreach (TreeNode controllerNode in treeview.Nodes)
+			{
+				if (controllerNode.Tag is IControllerDevice controller)
+				{
+					SetControllerImage(controllerNode, controller.IsRunning);
+				}
+			}
+
+			treeview.EndUpdate();
+		}
+
+		private void SetControllerImage(TreeNode controllerNode, bool isRunning)
+		{
+			if (isRunning)
+				controllerNode.ImageKey = controllerNode.SelectedImageKey = @"Group";
+			else
+				controllerNode.ImageKey = controllerNode.SelectedImageKey = @"RedBall";
+		}
+
+		public void RefreshControllerOutputNames(IControllerDevice controller)
+		{
+			treeview.BeginUpdate();
+			var path = GenerateEquivalentTreeNodeFullPathFromController(controller);
+			var node = FindNodeInTreeAtPath(treeview, path);
+			if (node.Tag == controller)
+			{
+				foreach (TreeNode channelNode in node.Nodes)
+				{
+					if (channelNode.Tag is int i)
+					{
+						channelNode.Name = channelNode.Text = controller.Outputs[i].Name;
+					}
+				}
+			}
+			treeview.EndUpdate();
+		}
+
+		public void RefreshControllerOutputStatus()
+		{
+			treeview.BeginUpdate();
+			foreach (TreeNode node in treeview.Nodes)
+			{
+				if (node.Tag is IControllerDevice controller)
+				{
+					foreach (TreeNode channelNode in node.Nodes)
+					{
+						if (channelNode.Tag is int i)
+						{
+							IDataFlowComponentReference source = controller.Outputs[i].Source;
+
+							if (source == null)
+							{
+								channelNode.ImageKey = channelNode.SelectedImageKey = "WhiteBall";
+							}
+							else if (source.Component == null || source.OutputIndex < 0)
+							{
+								channelNode.ImageKey = channelNode.SelectedImageKey = "GreyBall";
+							}
+							else
+							{
+								channelNode.ImageKey = channelNode.SelectedImageKey = "GreenBall";
+							}
+						}
+					}
+				}
+				
+			}
+
+			treeview.EndUpdate();
 		}
 
 		#endregion
@@ -378,7 +483,8 @@ namespace Common.Controls
 			oc.OutputCount = outputCount;
 			VixenSystem.OutputControllers.Add(oc);
 
-			PopulateControllerTree(oc);
+			//PopulateControllerTree(oc);
+			AddControllerToTree(oc);
 			OnControllersChanged();
 
 			return true;
@@ -392,7 +498,7 @@ namespace Common.Controls
 					if (textDialog.Response != string.Empty) {
 						outputController.Name = textDialog.Response;
 						OnControllersChanged();
-						PopulateControllerTree();
+						RefreshControllerName(outputController);
 						return true;
 					}
 				}
@@ -437,7 +543,7 @@ namespace Common.Controls
                 if (result)
                 {
                     OnControllersChanged();
-                    PopulateControllerTree();
+                    RefreshControllerOutputNames(controller);
                 }
 			}
 			return result;
@@ -536,7 +642,7 @@ namespace Common.Controls
 			}
 
 			if (changes){
-				PopulateControllerTree();
+				RefreshControllerStatus();
 				OnControllersChanged();
 			}
 		}
@@ -553,7 +659,7 @@ namespace Common.Controls
 			}
 
 			if (changes){
-				PopulateControllerTree();
+				RefreshControllerStatus();
 				OnControllersChanged();
 			}
 		}
@@ -574,6 +680,26 @@ namespace Common.Controls
 			_someSelectedControllersNotRunning = notRunningCount > 0;
 			startControllerToolStripMenuItem.Enabled = _someSelectedControllersNotRunning;
 			stopControllerToolStripMenuItem.Enabled = _someSelectedControllersRunning;
+		}
+		
+		private void treeView_BeforeCollapse(object sender, TreeViewCancelEventArgs e)
+		{
+			if (isDoubleClick && e.Action == TreeViewAction.Collapse) e.Cancel = true;
+		}
+
+		private void treeView_BeforeExpand(object sender, TreeViewCancelEventArgs e)
+		{
+			if (isDoubleClick && e.Action == TreeViewAction.Expand)e.Cancel = true;
+		}
+
+		private void treeView_MouseDown(object sender, MouseEventArgs e)
+		{
+			isDoubleClick = e.Clicks > 1;
+		}
+
+		private void treeview_DoubleClick(object sender, EventArgs e)
+		{
+			if (SelectedControllers.Any()) ConfigureController(SelectedControllers.First());
 		}
 	}
 }

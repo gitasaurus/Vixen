@@ -6,10 +6,15 @@ using System.Windows.Media;
 using System.Windows.Media.Imaging;
 using Catel.Collections;
 using Catel.Data;
+using Catel.IoC;
 using Catel.MVVM;
+using Catel.Services;
 using Common.WPFCommon.Command;
+using Common.WPFCommon.Services;
 using VixenModules.App.CustomPropEditor.Model;
 using VixenModules.App.CustomPropEditor.Services;
+using Brush = System.Drawing.Brush;
+using Color = System.Drawing.Color;
 
 namespace VixenModules.App.CustomPropEditor.ViewModels
 {
@@ -17,8 +22,7 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 	{
 		private readonly ElementTreeViewModel _elementTreeViewModel;
 		private readonly Dictionary<Guid, List<LightViewModel>> _elementModelMap;
-		private readonly Configuration _config;
-
+		
 		public DrawingPanelViewModel(ElementTreeViewModel elementTreeViewModel)
 		{
 			_elementTreeViewModel = elementTreeViewModel;
@@ -33,6 +37,8 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 			AlignRightCommand = new RelayCommand(AlignRight, CanExecuteAlignmentMethod);
 			DistributeHorizontallyCommand = new RelayCommand(DistributeHorizontally, CanExecuteAlignmentMethod);
 			DistributeVerticallyCommand = new RelayCommand(DistributeVertically, CanExecuteAlignmentMethod);
+			FlipHorizontalCommand = new RelayCommand(FlipHorizontal, CanExecuteAlignmentMethod);
+			FlipVerticalCommand = new RelayCommand(FlipVertical, CanExecuteAlignmentMethod);
 
 			DeleteSelectedLightsCommand = new RelayCommand(DeleteSelectedLights);
 			Configuration = ConfigurationService.Instance().Config;
@@ -50,6 +56,8 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 			AlignTopsCommand.RaiseCanExecuteChanged();
 			DistributeVerticallyCommand.RaiseCanExecuteChanged();
 			DistributeHorizontallyCommand.RaiseCanExecuteChanged();
+			FlipHorizontalCommand.RaiseCanExecuteChanged();
+			FlipVerticalCommand.RaiseCanExecuteChanged();
 
 			DecreaseLightSizeCommand.RaiseCanExecuteChanged();
 			IncreaseLightSizeCommand.RaiseCanExecuteChanged();
@@ -229,16 +237,16 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 		/// Gets or sets the LightColor value.
 		/// </summary>
 		[ViewModelToModel("Configuration")]
-		public Brush LightColor
+		public Color LightColor
 		{
-			get { return GetValue<Brush>(LightColorProperty); }
+			get { return GetValue<Color>(LightColorProperty); }
 			//set { SetValue(LightColorProperty, value); }
 		}
 
 		/// <summary>
 		/// LightColor property data.
 		/// </summary>
-		public static readonly PropertyData LightColorProperty = RegisterProperty("LightColor", typeof(Brush), null);
+		public static readonly PropertyData LightColorProperty = RegisterProperty("LightColor", typeof(Color), null);
 
 		#endregion
 
@@ -248,16 +256,16 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 		/// Gets or sets the SelectedLightColor value.
 		/// </summary>
 		[ViewModelToModel("Configuration")]
-		public Brush SelectedLightColor
+		public Color SelectedLightColor
 		{
-			get { return GetValue<Brush>(SelectedLightColorProperty); }
+			get { return GetValue<Color>(SelectedLightColorProperty); }
 			//set { SetValue(SelectedLightColorProperty, value); }
 		}
 
 		/// <summary>
 		/// SelectedLightColor property data.
 		/// </summary>
-		public static readonly PropertyData SelectedLightColorProperty = RegisterProperty("SelectedLightColor", typeof(Brush), null);
+		public static readonly PropertyData SelectedLightColorProperty = RegisterProperty("SelectedLightColor", typeof(Color), null);
 
 		#endregion
 
@@ -273,7 +281,7 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 
 		public void ClearIsDirty()
 		{
-			this.ClearIsDirtyOnAllChilds();
+			this.ClearIsDirtyOnAllChildren();
 			//RootNodesViewModels.ForEach(x => x.ClearIsDirtyOnAllChilds());
 		}
 		
@@ -303,11 +311,25 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 
 		public void DeleteSelectedLights()
 		{
-		    var lightstoDelete = SelectedItems.Select(l => l.Light).ToList();
-		    DeselectAll();
-            PropModelServices.Instance().RemoveLights(lightstoDelete);
-			RefreshLightViewModels();
-			OnLightModelsChanged();
+			var lightstoDelete = SelectedItems.Select(l => l.Light).ToList();
+			if (lightstoDelete.Any())
+			{
+				var dependencyResolver = this.GetDependencyResolver();
+				var mbs = dependencyResolver.Resolve<IMessageBoxService>();
+				var response = mbs.GetUserConfirmation(
+					"Deleting lights will remove them from all any/all groups they are part of. Are you sure?",
+					"Delete lights");
+
+				if (response.Result == MessageResult.OK)
+				{
+					DeselectAll();
+					PropModelServices.Instance().RemoveLights(lightstoDelete);
+					RefreshLightViewModels();
+					OnLightModelsChanged();
+				}
+				
+			}
+		   
 		}
 
 		public void DeselectAll()
@@ -397,6 +419,28 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 			}
 		}
 
+		public void FlipHorizontal()
+		{
+			// Find min and max X position
+			var max = SelectedItems.Max(element => Math.Abs(element.X));
+			var min = SelectedItems.Min(element => Math.Abs(element.X));
+			foreach (var lightViewModel in SelectedItems)
+			{
+				lightViewModel.Light.X = max - (lightViewModel.Light.X - min);
+			}
+		}
+
+		public void FlipVertical()
+		{
+			// Find min and max Y position
+			var max = SelectedItems.Max(element => Math.Abs(element.Y));
+			var min = SelectedItems.Min(element => Math.Abs(element.Y));
+			foreach (var lightViewModel in SelectedItems)
+			{
+				lightViewModel.Light.Y = max - (lightViewModel.Light.Y - min);
+			}
+		}
+
 		public void DistributeHorizontally()
 		{
 			if (SelectedItems.Count > 2)
@@ -465,6 +509,8 @@ namespace VixenModules.App.CustomPropEditor.ViewModels
 		public RelayCommand AlignBottomsCommand { get; private set; }
 		public RelayCommand DistributeHorizontallyCommand { get; private set; }
 		public RelayCommand DistributeVerticallyCommand { get; private set; }
+		public RelayCommand FlipHorizontalCommand { get; private set; }
+		public RelayCommand FlipVerticalCommand { get; private set; }
 
 
 		#endregion

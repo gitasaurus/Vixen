@@ -35,10 +35,20 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 			_bottomLeft = new PreviewPoint(_topLeft);
 			_bottomRight = new PreviewPoint(_topLeft);
 
-			initiallyAssignedNode = selectedNode;
+			Reconfigure(selectedNode);
+		}
 
+		#region Overrides of PreviewBaseShape
+
+		/// <inheritdoc />
+		internal sealed override void Reconfigure(ElementNode node)
+		{
+			_pixels.Clear();
+			initiallyAssignedNode = node;
 			Layout();
 		}
+
+		#endregion
 
 		[OnDeserialized]
 		private new void OnDeserialized(StreamingContext context)
@@ -483,5 +493,23 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 			_bottomLeft.Y = bottomLeftStart.Y;
 			Resize(aspect);
 		}
+
+		#region Overrides of PreviewBaseShape
+
+		/// <inheritdoc />
+		public override object Clone()
+		{
+			var newNet = (PreviewNet) MemberwiseClone();
+			newNet._topLeft = _topLeft.Copy();
+			newNet._topRight = _topRight.Copy();
+			newNet._bottomRight = _bottomRight.Copy();
+			newNet._bottomLeft = _bottomLeft.Copy();
+
+			newNet.Reconfigure(initiallyAssignedNode);
+
+			return newNet;
+		}
+
+		#endregion
 	}
 }

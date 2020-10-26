@@ -26,8 +26,6 @@ namespace VixenModules.Effect.Effect
 	/// </summary>
 	public abstract class PixelEffectBase : BaseEffect
 	{
-
-		protected const short FrameTime = 50;
 		protected static Logger Logging = LogManager.GetCurrentClassLogger();
 		protected readonly List<int> StringPixelCounts = new List<int>();
 		protected List<ElementLocation> ElementLocations; 
@@ -56,7 +54,7 @@ namespace VixenModules.Effect.Effect
 			return _elementData;
 		}
 
-		protected override void _PreRender(CancellationTokenSource tokenSource = null)
+		protected void ConfigureDisplayElementSize()
 		{
 			if (TargetPositioning == TargetPositioningType.Strings)
 			{
@@ -66,11 +64,16 @@ namespace VixenModules.Effect.Effect
 			{
 				ConfigureVirtualBuffer();
 			}
-			
+		}
+
+		protected override void _PreRender(CancellationTokenSource tokenSource = null)
+		{
+			ConfigureDisplayElementSize();
+
 			SetupRender();
 			int bufferSize = StringPixelCounts.Sum();
 			EffectIntents data = new EffectIntents(bufferSize);
-			foreach (ElementNode node in TargetNodes)
+			foreach (IElementNode node in TargetNodes)
 			{
 				if (node != null)
 					RenderNode(node, ref data);
@@ -115,6 +118,14 @@ namespace VixenModules.Effect.Effect
 			}
 		}
 
+		/// <summary>
+		/// Flag to track that the target positioning is changing.
+		/// This allows derived effects to differentiate between the user
+		/// changing the orientation vs the orientation changing due to
+		/// the target positioning changing.
+		/// </summary>
+		protected bool TargetPositioningChanging { get; set; }
+
 		[Value]
 		[Browsable(false)]
 		[ProviderCategory(@"Setup", 0)]
@@ -126,6 +137,8 @@ namespace VixenModules.Effect.Effect
 			get { return EffectModuleData.TargetPositioning; }
 			set
 			{
+				TargetPositioningChanging = true;
+
 				EffectModuleData.TargetPositioning = value;
 				if (TargetPositioning == TargetPositioningType.Locations)
 				{
@@ -139,6 +152,8 @@ namespace VixenModules.Effect.Effect
 				TargetPositioningChanged();
 				IsDirty = true;
 				OnPropertyChanged();
+
+				TargetPositioningChanging = false;
 			}
 		}
 
@@ -197,7 +212,7 @@ namespace VixenModules.Effect.Effect
 			}
 		}
 
-		private void CalculatePixelsPerString(IEnumerable<ElementNode> nodes)
+		private void CalculatePixelsPerString(IEnumerable<IElementNode> nodes)
 		{
 			StringPixelCounts.Clear();
 			foreach (var node in nodes)
@@ -206,15 +221,15 @@ namespace VixenModules.Effect.Effect
 			}
 		}
 
-		private int CalculateMaxStringCount(IEnumerable<ElementNode> nodes)
+		private int CalculateMaxStringCount(IEnumerable<IElementNode> nodes)
 		{
 			return nodes.Count();
 		}
 
-		protected IEnumerable<ElementNode> FindLeafParents()
+		protected IEnumerable<IElementNode> FindLeafParents()
 		{
-			var nodes = new List<ElementNode>();
-			var nonLeafElements = Enumerable.Empty<ElementNode>();
+			var nodes = new List<IElementNode>();
+			var nonLeafElements = Enumerable.Empty<IElementNode>();
 
 			if (TargetNodes.FirstOrDefault() != null)
 			{
@@ -346,7 +361,7 @@ namespace VixenModules.Effect.Effect
 		}
 
 
-		protected EffectIntents RenderNode(ElementNode node, ref EffectIntents effectIntents)
+		protected EffectIntents RenderNode(IElementNode node, ref EffectIntents effectIntents)
 		{
 			if (TargetPositioning == TargetPositioningType.Strings)
 			{
@@ -355,7 +370,7 @@ namespace VixenModules.Effect.Effect
 			return RenderNodeByLocation(node, ref effectIntents);
 		}
 
-		protected EffectIntents RenderNodeByLocation(ElementNode node, ref EffectIntents effectIntents)
+		protected EffectIntents RenderNodeByLocation(IElementNode node, ref EffectIntents effectIntents)
 		{
 			int nFrames = GetNumberFrames();
 			if (nFrames <= 0 | BufferWi == 0 || BufferHt == 0) return effectIntents;
@@ -367,19 +382,17 @@ namespace VixenModules.Effect.Effect
 			RenderEffectByLocation(nFrames, buffer);
 
 			// create the intents
-			var frameTs = new TimeSpan(0, 0, 0, 0, FrameTime);
-
 			foreach (var elementLocation in ElementLocations)
 			{
 				var frameData = buffer.GetFrameDataAt(elementLocation.X, elementLocation.Y);
-				IIntent intent = new StaticArrayIntent<RGBValue>(frameTs, frameData, TimeSpan);
+				IIntent intent = new StaticArrayIntent<RGBValue>(FrameTimespan, frameData, TimeSpan);
 				effectIntents.AddIntentForElement(elementLocation.ElementNode.Element.Id, intent, startTime);
 			}
 			
 			return effectIntents;
 		}
 
-		protected EffectIntents RenderNodeByStrings(ElementNode node, ref EffectIntents effectIntents)
+		protected EffectIntents RenderNodeByStrings(IElementNode node, ref EffectIntents effectIntents)
 		{
 			int nFrames = GetNumberFrames();
 			if (nFrames <= 0 | BufferWi==0 || BufferHt==0) return new EffectIntents();
@@ -541,19 +554,6 @@ namespace VixenModules.Effect.Effect
 			return newStart + (value - originalStart) * scale;
 		}
 
-		/// <summary>
-		/// Takes an arbitrary value greater than equal to 0 and less than equal to 100 and translates it to a corresponding minimum - maximum value 
-		/// suitable for use in a range 
-		/// </summary>
-		/// <param name="value"></param>
-		/// <param name="maximum"></param>
-		/// <param name="minimum"></param>
-		/// <returns></returns>
-		protected static double ScaleCurveToValue(double value, double maximum, double minimum)
-		{
-			return ConvertRange(0, 100, minimum, maximum, value);
-		}
-
 		protected static bool IsAngleBetween(double a, double b, double n)
 		{
 			n = (360 + (n % 360)) % 360;
@@ -582,11 +582,6 @@ namespace VixenModules.Effect.Effect
 		protected static double DistanceFromPoint(Point origin, int x, int y)
 		{
 			return Math.Sqrt(Math.Pow((x - origin.X), 2) + Math.Pow((y - origin.Y), 2));
-		}
-
-		protected static double DistanceFromPoint(Point origin, Point point)
-		{
-			return Math.Sqrt(Math.Pow((point.X - origin.X), 2) + Math.Pow((point.Y - origin.Y), 2));
 		}
 
 		protected static double AddDegrees(double angle, double degrees)

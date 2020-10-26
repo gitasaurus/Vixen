@@ -431,6 +431,20 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 				{
 					//We are rotating!
 					double angle = GetAngle(_rotationCenter, new Point(x, y));
+
+					// Use Detents of 0, 45, 90, 135, 180, 225, 270 and 315 when holding the Shift modifier key down.
+					if (Control.ModifierKeys == Keys.Control)
+					{
+						if (angle >= 22.5 && angle < 67.5) angle = 45;
+						else if (angle >= 67.5 && angle < 112.5) angle = 90;
+						else if (angle >= 112.5 && angle < 157.5) angle = 135;
+						else if (angle >= 157.5 && angle < 202.5) angle = 180;
+						else if (angle >= 202.5 && angle < 247.5) angle = 225;
+						else if (angle >= 247.5 && angle < 292.5) angle = 270;
+						else if (angle >= 292.5 && angle < 337.5) angle = 315;
+						else if (angle >= 337.5 || angle < 22.5) angle = 0;
+					}
+
 					RotationAngle = (int)Math.Round(angle, MidpointRounding.AwayFromZero);
 					_selectionPoint = _dragPoints[4];
 				}
@@ -585,6 +599,21 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 			
 		}
 
+		public override bool ShapeAllInRect(Rectangle rect)
+		{
+			PreviewPoint p1 = PointToZoomPoint(new PreviewPoint(rect.X, rect.Y));
+			PreviewPoint p2 = PointToZoomPoint(new PreviewPoint(rect.X + rect.Width, rect.Y + rect.Height));
+			int X1 = Math.Min(p1.X, p2.X);
+			int X2 = Math.Max(p1.X, p2.X);
+			int Y1 = Math.Min(p1.Y, p2.Y);
+			int Y2 = Math.Max(p1.Y, p2.Y);
+			
+			var rt = new RotateTransform(RotationAngle, _rotationCenter.X, _rotationCenter.Y);
+			var b = rt.TransformBounds(Bounds);
+
+			return (b.Top >= Y1 && b.Bottom <= Y2 && b.Left >= X1 && b.Right <= X2);
+		}
+
 		/// <inheritdoc />
 		public override void MoveTo(int x, int y)
 		{
@@ -633,7 +662,26 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 			Layout();
 		}
 
+		#region Overrides of PreviewBaseShape
 
+		/// <inheritdoc />
+		public override object Clone()
+		{
+			var newProp = (PreviewCustomProp) MemberwiseClone();
+			newProp.PropPixels = new List<PreviewPixel>();
+
+			foreach (PreviewPixel pixel in PropPixels)
+			{
+				var p = pixel.Clone();
+				newProp.PropPixels.Add(p);
+			}
+
+			newProp.Pixels = PropPixels;
+
+			return newProp;
+		}
+
+		#endregion
 	}
 
 	public static class Extensions

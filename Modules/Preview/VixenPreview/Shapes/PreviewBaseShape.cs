@@ -66,6 +66,11 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 
 		public event OnPropertiesChangedHandler OnPropertiesChanged;
 
+		internal virtual void Reconfigure(ElementNode node)
+		{
+
+		}
+
 		public void UpdateColorType()
 		{
 			foreach (var previewPixel in Pixels)
@@ -279,18 +284,12 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 		public void SetPixelZoom() 
 		{
 			// Zoom
+			if (ZoomLevel == 1) return;
 			foreach (PreviewPixel pixel in _pixels)
 			{
-                try
-                {
-                    pixel.X = Convert.ToInt32((Convert.ToDouble(pixel.X) * ZoomLevel));
-                    pixel.Y = Convert.ToInt32((Convert.ToDouble(pixel.Y) * ZoomLevel));
-                }
-                catch (Exception ex)
-                {
-                    Console.WriteLine("SetPixelZoom: " + ex.Message);
-                }
-            }
+				pixel.X = (int)(pixel.X * ZoomLevel);
+				pixel.Y = (int)(pixel.Y * ZoomLevel);
+			}
 		}
 
 		[Browsable(false)]
@@ -485,13 +484,27 @@ namespace VixenModules.Preview.VixenPreview.Shapes
                 int X2 = Math.Max(rect.X, rect.X + rect.Width);
                 int Y1 = Math.Min(rect.Y, rect.Y + rect.Height);
                 int Y2 = Math.Max(rect.Y, rect.Y + rect.Height);
-                if (pixel.X >= X1 &&
-                    pixel.X <= X2 &&
-                    pixel.Y >= Y1 &&
-                    pixel.Y <= Y2)
+                if (_isHighPrecision)
                 {
-                    return true;
+	                if (pixel.Location.X >= X1 &&
+	                    pixel.Location.X <= X2 &&
+	                    pixel.Location.Y >= Y1 &&
+	                    pixel.Location.Y <= Y2)
+	                {
+		                return true;
+	                }
                 }
+                else
+                {
+	                if (pixel.X >= X1 &&
+	                    pixel.X <= X2 &&
+	                    pixel.Y >= Y1 &&
+	                    pixel.Y <= Y2)
+	                {
+		                return true;
+	                }
+                }
+                
             }
 			return false;
 		}
@@ -536,8 +549,8 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 
 		public void PointToZoomPointRef(PreviewPoint p)
 		{
-			int xDif = p.X - Convert.ToInt32(p.X / ZoomLevel);
-			int yDif = p.Y - Convert.ToInt32(p.Y / ZoomLevel);
+			int xDif = p.X - (int)(p.X / ZoomLevel);
+			int yDif = p.Y - (int)(p.Y / ZoomLevel);
 			p.X = p.X - xDif;
 			p.Y = p.Y - yDif;
 		}
@@ -553,7 +566,13 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 
 		public virtual object Clone()
 		{
-			return this.MemberwiseClone();
+			var shape = (PreviewBaseShape)this.MemberwiseClone();
+			foreach (var previewPixel in Pixels)
+			{
+				shape.Pixels.Add(previewPixel.Clone());
+			}
+
+			return shape;
 		}
 
 		public abstract void MoveTo(int x, int y);
@@ -787,7 +806,15 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 				{
 					//All points are the same in standard discrete 
 					int col = 1;
-					Point xy = new Point(previewPixel.X, previewPixel.Y);
+					Vector2 xy;
+					if (_isHighPrecision)
+					{
+						xy = new Vector2((float)previewPixel.Location.X, (float)previewPixel.Location.Y);
+					}
+					else
+					{
+						xy = new Vector2(previewPixel.X, previewPixel.Y);
+					}
 					foreach (Color c in colors)
 					{
 						if (c.A > 0)
@@ -804,7 +831,7 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 							if (col % 2 == 0)
 							{
 								xy.Y += previewPixel.PixelSize;
-								xy.X = xy.X;
+								//xy.X = xy.X;
 							}
 							else
 							{
@@ -871,6 +898,23 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 		{
 			Dispose(true);
 			GC.SuppressFinalize(this);
+		}
+
+		protected void AddPixels(ElementNode node, int lightCount)
+		{
+			if (_pixels.Count == 0)
+			{
+				// Just add the pixels, they will get laid out next
+				for (int lightNum = 0; lightNum < lightCount; lightNum++)
+				{
+					PreviewPixel pixel = AddPixel(10, 10);
+					pixel.PixelColor = Color.White;
+					if (node != null && node.IsLeaf)
+					{
+						pixel.Node = node;
+					}
+				}
+			}
 		}
 	}
 }

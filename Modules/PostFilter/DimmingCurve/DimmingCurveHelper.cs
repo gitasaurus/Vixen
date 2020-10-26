@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Linq;
 using System.Text;
@@ -22,18 +21,30 @@ namespace VixenModules.OutputFilter.DimmingCurve
 	{
 		private static NLog.Logger Logging = NLog.LogManager.GetCurrentClassLogger();
 
-		public DimmingCurveHelper()
+		public DimmingCurveHelper(bool simpleMode)
 		{
 			InitializeComponent();
-			ForeColor = ThemeColorTable.ForeColor;
-			BackColor = ThemeColorTable.BackgroundColor;
 			ThemeUpdateControls.UpdateControls(this);
+			SimpleMode = simpleMode;
 			_curve = new Curve();
 		}
+
+		public DimmingCurveHelper():this(false)
+		{
+		}
+
+		private bool SimpleMode { get; set; }
 
 		private void DimmingCurveHelper_Load(object sender, EventArgs e)
 		{
 			buttonOk.Enabled = false;
+			if (SimpleMode)
+			{
+				radioButtonExistingUpdate.Enabled = false;
+				radioButtonExistingAddNew.Enabled = false;
+				radioButtonExistingDoNothing.Enabled = false;
+				radioButtonInsertAfter.Checked = true;
+			}
 		}
 
 
@@ -42,7 +53,7 @@ namespace VixenModules.OutputFilter.DimmingCurve
 			get { return "Dimming Curve"; }
 		}
 
-		public bool Perform(IEnumerable<ElementNode> selectedNodes)
+		public bool Perform(IEnumerable<IElementNode> selectedNodes)
 		{
 			DialogResult dr = ShowDialog();
 			if (dr != DialogResult.OK)
@@ -62,13 +73,13 @@ namespace VixenModules.OutputFilter.DimmingCurve
 				Logging.Warn("no radio button selected");
 
 
-			IEnumerable<ElementNode> leafElements = selectedNodes.SelectMany(x => x.GetLeafEnumerator()).Distinct();
+			IEnumerable<IElementNode> leafElements = selectedNodes.SelectMany(x => x.GetLeafEnumerator()).Distinct();
 			int modulesCreated = 0;
 			int modulesConfigured = 0;
 			int modulesSkipped = 0;
 			
 
-			foreach (ElementNode leafNode in leafElements) {
+			foreach (IElementNode leafNode in leafElements) {
 
 				// get the leaf 'things' to deal with -- ie. either existing dimming curves on a filter branch, or data component outputs
 				// (if we're adding new ones, ignore any existing dimming curves: always go to the outputs and we'll add new ones)

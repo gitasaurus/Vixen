@@ -144,6 +144,8 @@ namespace VixenModules.App.ExportWizard
 
 		private async Task<bool> DoExport(IProgress<ExportProgressStatus> progress)
 		{
+			var updateIntervalHold = VixenSystem.DefaultUpdateInterval;
+			VixenSystem.DefaultUpdateInterval = _data.ActiveProfile.Interval;
 			var exportProgressStatus = new ExportProgressStatus();
 			var overallProgressSteps = _data.ActiveProfile.SequenceFiles.Count * 2d; //There are basically 2 steps for each. Render and export.
 			var overallProgressStep = 0;
@@ -170,6 +172,12 @@ namespace VixenModules.App.ExportWizard
 					LoadMedia(sequence);
 					//Render it
 					RenderSequence(sequence, progress);
+
+					if (_cancelled)
+					{
+						break;
+					}
+
 					//Update over all progress with next step
 					overallProgressStep++;
 					exportProgressStatus.OverallProgressValue = (int)(overallProgressStep / overallProgressSteps * 100);
@@ -185,13 +193,18 @@ namespace VixenModules.App.ExportWizard
 					
 				}
 
-				await CreateUniverseFile();
+				if (!_cancelled)
+				{
+					await CreateUniverseFile();
+				}
 				exportProgressStatus.TaskProgressMessage = "";
 				exportProgressStatus.TaskProgressValue = 0;
 				exportProgressStatus.OverallProgressMessage = "Completed";
 				progress.Report(exportProgressStatus);
 
 			});
+
+			VixenSystem.DefaultUpdateInterval = updateIntervalHold;
 			return true;
 		}
 
@@ -264,7 +277,7 @@ namespace VixenModules.App.ExportWizard
 				{
 					string audioOutputPath = Path.Combine(_data.ActiveProfile.AudioOutputFolder,
 						_data.ActiveProfile.RenameAudio
-							? sequence.Name + Path.GetExtension(_data.Export.AudioFilename)
+							? _data.Export.FormatAudioFileName(sequence.Name)
 							: Path.GetFileName(_data.Export.AudioFilename));
 					File.Copy(_data.Export.AudioFilename, audioOutputPath, true);
 				}
@@ -278,7 +291,7 @@ namespace VixenModules.App.ExportWizard
 			if (canOutput)
 			{
 				_data.Export.OutFileName = Path.Combine(_data.ActiveProfile.OutputFolder, sequence.Name + "." + _data.Export.ExportFileTypes[_data.ActiveProfile.Format]);
-				await _data.Export.DoExport(sequence, _data.ActiveProfile.Format, progress);
+				await _data.Export.DoExport(sequence, _data.ActiveProfile.Format, _data.ActiveProfile.EnableCompression, progress, _data.ActiveProfile.RenameAudio);
 			}
 			
 		}
@@ -293,7 +306,7 @@ namespace VixenModules.App.ExportWizard
 			}
 			catch (Exception e)
 			{
-				Logging.Error(e, $"An error occured trying to create the export directory structure {path}");
+				Logging.Error(e, $"An error occurred trying to create the export directory structure {path}");
 			}
 
 			return success;

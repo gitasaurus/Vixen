@@ -86,6 +86,8 @@ namespace VixenModules.Editor.TimedSequenceEditor
 			chkGenerateControllerInfo.Checked = _profile.GetSetting(XMLProfileSettings.SettingType.AppSettings, $"{Name}/GenerateUniverse", false);
 			radio2x.Checked = _profile.GetSetting(XMLProfileSettings.SettingType.AppSettings, $"{Name}/Universe2x", true);
 	        radio1x.Checked = !radio2x.Checked;
+	        chkCompress.Checked = _profile.GetSetting(XMLProfileSettings.SettingType.AppSettings, $"{Name}/Compress", true);
+	        chkCompress.Enabled = _exportOps.CanCompress(outputFormatComboBox.SelectedItem.ToString());
 
 			buttonStop.Enabled = false;
 	        UpdateNetworkList();
@@ -149,11 +151,22 @@ namespace VixenModules.Editor.TimedSequenceEditor
 			
             _outFileName = saveDialog.FileName;
             _exportOps.OutFileName = _outFileName;
-            _exportOps.UpdateInterval = Convert.ToInt32(resolutionComboBox.Text);
+
+            if (Int32.TryParse(resolutionComboBox.Text, out int interval))
+            {
+	            _exportOps.UpdateInterval = interval;
+            }
+            else
+            {
+	            var messageBox = new MessageBoxForm($"Invalid timing interval {resolutionComboBox.Text}, check the value and try again.",
+		            "Error", MessageBoxButtons.OK, SystemIcons.Warning);
+	            messageBox.ShowDialog();
+	            return;
+            }
 
 			var progress = new Progress<ExportProgressStatus>(ReportExportProgress);
 	        _exportOps.AudioFilename = _audioFileName;
-			await _exportOps.DoExport(_sequence, outputFormatComboBox.SelectedItem.ToString(), progress);
+			await _exportOps.DoExport(_sequence, outputFormatComboBox.SelectedItem.ToString(), chkCompress.Checked, progress);
 
 	        if (outputFormatComboBox.SelectedItem.ToString().Contains("Falcon"))
 	        {
@@ -443,7 +456,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
         {
             ComboBox comboBox = (ComboBox)sender;
             _profile.PutSetting(XMLProfileSettings.SettingType.AppSettings, string.Format("{0}/ExportFormat", Name), (int)comboBox.SelectedIndex);
-
+            chkCompress.Enabled = _exportOps.CanCompress(outputFormatComboBox.SelectedItem.ToString());
 			SetUniverseVersionEnabled();
         }
 
@@ -451,7 +464,7 @@ namespace VixenModules.Editor.TimedSequenceEditor
 	    {
 		    if (chkGenerateControllerInfo.Checked)
 		    {
-			    if (outputFormatComboBox.SelectedItem.ToString().StartsWith("Falcon")) //Ewww...
+			    if (_exportOps.IsFalconFormat(outputFormatComboBox.SelectedItem.ToString())) 
 			    {
 				    radio2x.Enabled = radio1x.Enabled = true;
 			    }
@@ -463,14 +476,18 @@ namespace VixenModules.Editor.TimedSequenceEditor
 		    else
 		    {
 			    radio2x.Enabled = radio1x.Enabled = false;
-			}
+		    }
 		    
 	    }
 
 	    private void resolutionComboBox_SelectedIndexChanged(object sender, EventArgs e)
         {
+			ComboBox comboBox = (ComboBox)sender;
+			if (!Int32.TryParse(comboBox.Text, out int value))
+			{
+				comboBox.SelectedIndex = exportResolutionDefault;
+			}
 
-            ComboBox comboBox = (ComboBox)sender;
             _profile.PutSetting(XMLProfileSettings.SettingType.AppSettings, string.Format("{0}/ExportResolution", Name), (int)comboBox.SelectedIndex);
         }
 
@@ -482,7 +499,13 @@ namespace VixenModules.Editor.TimedSequenceEditor
 
 		private void radio2x_CheckedChanged(object sender, EventArgs e)
 		{
+			chkCompress.Enabled = radio2x.Checked;
 			_profile.PutSetting(XMLProfileSettings.SettingType.AppSettings, $"{Name}/Universe2x", radio2x.Checked);
+		}
+
+		private void chkCompress_CheckedChanged(object sender, EventArgs e)
+		{
+			_profile.PutSetting(XMLProfileSettings.SettingType.AppSettings, $"{Name}/Compress", chkCompress.Checked);
 		}
 	}
 }

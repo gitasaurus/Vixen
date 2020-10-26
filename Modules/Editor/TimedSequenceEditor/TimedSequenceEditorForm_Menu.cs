@@ -4,6 +4,7 @@ using System.Diagnostics;
 using System.Drawing;
 using System.Linq;
 using System.Windows.Forms;
+using System.Windows.Media.Animation;
 using Common.Controls;
 using Common.Controls.Timeline;
 using Common.Controls.TimelineControl;
@@ -52,12 +53,12 @@ namespace VixenModules.Editor.TimedSequenceEditor
 
 		private void playToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			PlaySequence();
+			PlayPauseToggle();
 		}
 
 		private void pauseToolStripMenuItem_Click(object sender, EventArgs e)
 		{
-			PauseSequence();
+			PlayPauseToggle();
 		}
 
 		private void stopToolStripMenuItem_Click(object sender, EventArgs e)
@@ -281,6 +282,11 @@ namespace VixenModules.Editor.TimedSequenceEditor
 
 		#region View Menu
 
+		private void showEffectInfoToolStripMenuItem_Click(object sender, EventArgs e)
+		{
+			TimelineControl.grid.ShowEffectToolTip = showEffectInfoToolStripMenuItem.Checked;
+		}
+
 		private void toolStripMenuItem_zoomTimeIn_Click(object sender, EventArgs e)
 		{
 			TimelineControl.Zoom(0.8);
@@ -373,7 +379,13 @@ namespace VixenModules.Editor.TimedSequenceEditor
 				}
 			}
 		}
-			
+
+
+		private void HighlightRowsWithEffectsToolStripMenuItem_CheckedChanged(object sender, EventArgs e)
+		{
+			TimelineControl.grid.HighlightRowsWithEffects(highlightRowsWithEffectsToolStripMenuItem.Checked);
+		}
+
 		private void effectEditorWindowToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			HandleDockContentToolStripMenuClick(EffectEditorForm, DockState.DockRight);
@@ -444,12 +456,16 @@ namespace VixenModules.Editor.TimedSequenceEditor
 		{
 			var selector = new CurveLibrarySelector{DoubleClickMode = CurveLibrarySelector.Mode.Edit};
 			selector.ShowDialog();
+			_currentToolStrip = null;
+			Populate_Curves();
 		}
 
 		private void colorGradientToolStripMenuItem_Click(object sender, EventArgs e)
 		{
 			var selector = new ColorGradientLibrarySelector{DoubleClickMode = ColorGradientLibrarySelector.Mode.Edit};
 			selector.ShowDialog();
+			_currentToolStrip = null;
+			Populate_Gradients();
 		}
 
 		private async void editMapsToolStripMenuItem_Click(object sender, EventArgs e)

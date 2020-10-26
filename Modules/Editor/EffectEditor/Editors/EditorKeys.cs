@@ -48,7 +48,11 @@ namespace VixenModules.Editor.EffectEditor.Editors
 		private static readonly ComponentResourceKey _GradientLevelPairEditorKey = new ComponentResourceKey(ThisType, "GradientLevelPairEditor");
 		private static readonly ComponentResourceKey _FontEditorKey = new ComponentResourceKey(typeof(EditorKeys), "FontEditor");
 		private static readonly ComponentResourceKey _StringCollectionEditorKey = new ComponentResourceKey(ThisType, "StringCollectionEditor");
-
+		private static readonly ComponentResourceKey _IEmitterEditorKey = new ComponentResourceKey(ThisType, "IEmitterCollectionEditor");
+		private static readonly ComponentResourceKey _IWaveformEditorKey = new ComponentResourceKey(ThisType, "IWaveformCollectionEditor");
+		private static readonly ComponentResourceKey _PolygonContainerEditorKey = new ComponentResourceKey(ThisType, "PolygonContainerEditor");
+		private static readonly ComponentResourceKey _IMorphPolygonEditorEditorKey = new ComponentResourceKey(ThisType, "IMorphPolygonCollectionEditor");
+		
 		/// <summary>
 		///     Gets the File editor key.
 		/// </summary>
@@ -237,5 +241,26 @@ namespace VixenModules.Editor.EffectEditor.Editors
 		{
 			get { return _GradientLevelPairEditorKey;}
 		}
+
+		public static ComponentResourceKey IEmitterEditorKey
+		{
+			get { return _IEmitterEditorKey; }
+		}
+		
+		public static ComponentResourceKey IWaveformEditorKey
+		{
+			get { return _IWaveformEditorKey; }
+		}
+
+		public static ComponentResourceKey PolygonContainerEditorKey
+		{
+			get { return _PolygonContainerEditorKey; }
+		}
+
+		public static ComponentResourceKey IMorphPolygonEditorKey
+		{
+			get { return _IMorphPolygonEditorEditorKey; }
+		}
+
 	}
 }

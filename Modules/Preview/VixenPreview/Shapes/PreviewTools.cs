@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel;
-using System.Data;
 using System.Drawing;
 using System.Drawing.Imaging;
 using System.Linq;
@@ -108,32 +107,6 @@ namespace VixenModules.Preview.VixenPreview.Shapes
 			b = Math.Abs(p2.X - p1.X);
 			p = Math.PI*((3*(a + b)) - Math.Sqrt((3*a + b)*(a + 3*b)));
 			return p;
-		}
-
-		// 
-		// Add the root nodes to the Display Element tree
-		//
-		public static void PopulateElementTree(TreeView tree)
-		{
-			foreach (ElementNode channel in VixenSystem.Nodes.GetRootNodes()) {
-				AddNodeToElementTree(tree.Nodes, channel);
-			}
-		}
-
-		// 
-		// Add each child Display Element or Display Element Group to the tree
-		// 
-		private static void AddNodeToElementTree(TreeNodeCollection collection, ElementNode channelNode)
-		{
-			TreeNode addedNode = new TreeNode();
-			addedNode.Name = channelNode.Id.ToString();
-			addedNode.Text = channelNode.Name;
-			addedNode.Tag = channelNode;
-			collection.Add(addedNode);
-
-			foreach (ElementNode childNode in channelNode.Children) {
-				AddNodeToElementTree(addedNode.Nodes, childNode);
-			}
 		}
 
 		public static List<Point> GetArcPoints(double Width, double Height, double NumPoints)

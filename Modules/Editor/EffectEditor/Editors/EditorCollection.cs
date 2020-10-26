@@ -22,6 +22,9 @@ using System.Drawing;
 using System.Linq;
 using Vixen.Attributes;
 using VixenModules.App.ColorGradients;
+using VixenModules.Effect.Liquid;
+using VixenModules.Effect.Morph;
+using VixenModules.Effect.Wave;
 
 namespace VixenModules.Editor.EffectEditor.Editors
 {
@@ -45,7 +48,14 @@ namespace VixenModules.Editor.EffectEditor.Editors
 			{typeof(List<string>), new TypeEditor(typeof(List<string>),EditorKeys.StringCollectionEditorKey)},
 			{KnownTypes.Vixen.Percentage, new TypeEditor(KnownTypes.Vixen.Percentage, EditorKeys.SliderPercentageEditorKey)},
 			{typeof (Enum), new TypeEditor(typeof (Enum), EditorKeys.EnumEditorKey)},
-			{KnownTypes.Windows.Font, new FontEditor()}
+			{KnownTypes.Windows.Font, new FontEditor() },
+			{typeof(IList<IEmitter>), new TypeEditor(typeof(IList<IEmitter>), EditorKeys.IEmitterEditorKey)},
+			{KnownTypes.Vixen.Emitter, new TypeEditor()},
+			{typeof(IList<IWaveform>), new TypeEditor(typeof(IList<IWaveform>), EditorKeys.IWaveformEditorKey)},
+			{KnownTypes.Vixen.Waveform, new TypeEditor()},
+			{typeof(IList<IMorphPolygon>), new TypeEditor(typeof(IList<IMorphPolygon>), EditorKeys.IMorphPolygonEditorKey)},
+			{KnownTypes.Vixen.MorphPolygon, new TypeEditor()},
+			{KnownTypes.Vixen.PolygonContainer, new PolygonContainerTypeEditor()},			
 		};
 
 		/// <summary>

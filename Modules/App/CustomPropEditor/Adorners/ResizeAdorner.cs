@@ -291,7 +291,20 @@ namespace VixenModules.App.CustomPropEditor.Adorners
 			Point pos = Mouse.GetPosition(AdornedElement);
 
 			_rotationAngle = GetAngle(_rotationCenter, pos);
-			
+
+			// Use Detents of 0, 45, 90, 135, 180, 225, 270 and 315 when holding the Shift modifier key down.
+			if (Keyboard.IsKeyDown(Key.LeftCtrl) || Keyboard.IsKeyDown(Key.RightCtrl))
+			{
+				if (_rotationAngle >= 22.5 && _rotationAngle < 67.5) _rotationAngle = 45;
+				else if (_rotationAngle >= 67.5 && _rotationAngle < 112.5) _rotationAngle = 90;
+				else if (_rotationAngle >= 112.5 && _rotationAngle < 157.5) _rotationAngle = 135;
+				else if (_rotationAngle >= 157.5 && _rotationAngle < 202.5) _rotationAngle = 180;
+				else if (_rotationAngle >= 202.5 && _rotationAngle < 247.5) _rotationAngle = 225;
+				else if (_rotationAngle >= 247.5 && _rotationAngle < 292.5) _rotationAngle = 270;
+				else if (_rotationAngle >= 292.5 && _rotationAngle < 337.5) _rotationAngle = 315;
+				else if (_rotationAngle >= 337.5 || _rotationAngle < 22.5) _rotationAngle = 0;
+			}
+
 			var difference = _rotationAngle - _rotateTransform.Angle;
 
 			_rotateTransform.Angle = _rotationAngle;
@@ -364,9 +377,10 @@ namespace VixenModules.App.CustomPropEditor.Adorners
 			_middleBottom.Arrange(new Rect(Bounds.X + Bounds.Width / 2 - _middleBottom.Width / 2, Bounds.Y + Bounds.Height, _middleBottom.Width, _middleBottom.Height));
 			_middleLeft.Arrange(new Rect(Bounds.X - _middleLeft.Width, Bounds.Y + Bounds.Height / 2 - _middleLeft.Width / 2, _middleLeft.Width, _middleLeft.Height));
 
-			_centerDrag.Arrange(new Rect(_rotationCenter.X - _centerDrag.Width / 2, _rotationCenter.Y - _centerDrag.Height / 2, _centerDrag.Width, _centerDrag.Height));
-			
-			_rotate.Arrange(new Rect(_rotationCenter.X - _rotate.Width / 2, Bounds.Y - 3 * _rotate.Height, _rotate.Width, _rotate.Height));
+			_centerDrag.Arrange(new Rect(Bounds.X + Bounds.Width/2 - _centerDrag.Width / 2, Bounds.Y + Bounds.Height/2 - _centerDrag.Height / 2, _centerDrag.Width, _centerDrag.Height));
+			//_centerDrag.Arrange(new Rect(_rotationCenter.X - _centerDrag.Width / 2, _rotationCenter.Y - _centerDrag.Height / 2, _centerDrag.Width, _centerDrag.Height));
+
+			_rotate.Arrange(new Rect(_rotationCenter.X - _rotate.Width / 2, Bounds.Y - 5 * _rotate.Height, _rotate.Width, _rotate.Height));
 
 			return finalSize;
 		}
