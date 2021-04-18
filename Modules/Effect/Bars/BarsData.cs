@@ -13,7 +13,6 @@ namespace VixenModules.Effect.Bars
 	[DataContract]
 	public class BarsData: EffectTypeModuleData
 	{
-
 		public BarsData()
 		{
 			Colors = new List<ColorGradient>{new ColorGradient(Color.Red), new ColorGradient(Color.Lime), new ColorGradient(Color.Blue)};
@@ -24,6 +23,13 @@ namespace VixenModules.Effect.Bars
 			LevelCurve = new Curve(new PointPairList(new[] { 0.0, 100.0 }, new[] { 100.0, 100.0 }));
 			SpeedCurve = new Curve(new PointPairList(new[] { 0.0, 100.0 }, new[] { 50.0, 50.0 }));
 			Orientation =StringOrientation.Vertical;
+            ZigZagAmplitude = 25;
+            ZigZagBarThickness = 5;
+            ZigZagSpacing = 5;           
+            BarType = BarType.Flat;
+            ZigZagPeriod = 25;
+			RotationAngle = new Curve(new PointPairList(new[] { 0.0, 100.0 }, new[] { 0.0, 0.0 }));
+			HighlightPercentage = 5;
 		}
 
 		[DataMember]
@@ -56,6 +62,27 @@ namespace VixenModules.Effect.Bars
 		[DataMember]
 		public StringOrientation Orientation { get; set; }
 
+        [DataMember]
+        public int ZigZagAmplitude { get; set; }
+
+        [DataMember]
+        public int ZigZagBarThickness { get; set; }
+
+        [DataMember]
+        public BarType BarType { get; set; }
+
+        [DataMember]
+        public int ZigZagSpacing { get; set; }
+
+        [DataMember]
+        public int ZigZagPeriod { get; set; }
+
+        [DataMember]
+        public Curve RotationAngle { get; set; }
+
+        [DataMember]
+        public int HighlightPercentage { get; set; }
+
 		[OnDeserialized]
 		public void OnDeserialized(StreamingContext c)
 		{
@@ -80,8 +107,15 @@ namespace VixenModules.Effect.Bars
 				MovementType = MovementType,
 				Highlight = Highlight,
 				LevelCurve = new Curve(LevelCurve),
-				SpeedCurve = new Curve(SpeedCurve)
-			};
+				SpeedCurve = new Curve(SpeedCurve),
+                ZigZagAmplitude = ZigZagAmplitude,
+                BarType = BarType,
+                ZigZagBarThickness = ZigZagBarThickness,
+                ZigZagSpacing = ZigZagSpacing,               
+                ZigZagPeriod = ZigZagPeriod,
+				RotationAngle = RotationAngle,
+				HighlightPercentage = HighlightPercentage,
+            };
 			return result;
 		}
 	}
